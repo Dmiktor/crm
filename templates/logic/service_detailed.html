@@ -1,0 +1,144 @@
+{% extends 'logic/base.html' %}
+{% block content %}
+    <div class="container main-container">
+        <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home"
+                        type="button" role="tab" aria-controls="nav-home" aria-selected="true">Інформація
+                </button>
+                <button class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile"
+                        type="button" role="tab" aria-controls="nav-profile" aria-selected="false">Пов'язані учасники
+                </button>
+                <button class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact"
+                        type="button" role="tab" aria-controls="nav-contact" aria-selected="false">Потенційні
+                    Користувачі
+                </button>
+            </div>
+        </nav>
+        <div class="tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
+                <div class="card">
+                    <div class="card-header">
+                        Загальна
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ service.title }}</h5>
+                        <hr>
+                        <div class="row">
+                            <div class="col">
+                                <div class="container">
+                                    <h5 class="card-title">Опис:</h5>
+                                    <hr>
+                                    <p class="card-text">{{ service.full }}</p>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="container">
+                                    <h5 class="card-title">Умови надання:</h5>
+                                    <hr>
+                                    <p class="card-text">{{ service.terms }}</p>
+                                    <hr>
+                                    <h5 class="card-title">Цільова аудиторія:</h5>
+                                    <hr>
+                                    <p class="card-text">{{ service.target }}</p>
+                                    <hr>
+                                    <h5 class="card-title">Тегі сервісу:</h5>
+                                    {% for tag in service.partnerTags.all %}
+                                        <a href="#"
+                                   class="btn btn-primary small">{{ tag }}</a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col">
+                                <div class="container">
+                                    <h5 class="card-title">Цільова тематика: {{ service.get_category_display }}</h5>
+                                    <hr>
+                                    <h5 class="card-title">Вартість у грн. : {{ service.price }}</h5>
+                                    <hr>
+                                </div>
+                            </div>
+                            <div class="col">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
+                {% if workersTeams %}
+                    <div class="card">
+                        <div class="card-header">
+                            Пов'язаний з командами
+                        </div>
+                        {% for workersTeam in workersTeams %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ workersTeam.title }}</h5>
+                                <hr>
+                                <p class="card-text">Відповідальна за команду особа:</p>
+                                <a href="{% url 'partner_detailed' name=workersTeam.rel_partner.name %}"
+                                   class="btn btn-primary">{{ workersTeam.rel_partner.name }}</a>
+                                <hr>
+                                <p class="card-text">Розробник в цій команді:</p>
+                                {% for woorker in workersTeam.workers.all %}
+                                    <a href="{% url 'partner_detailed' name=woorker.partner.name %}"
+                                       class="btn btn-primary">{{ woorker.partner.name }}</a>
+                                {% endfor %}
+                                <hr>
+                                <p class="card-text">Проэкт:</p>
+                                <a href="#"
+                                   class="btn btn-primary">{{ workersTeam.project.title }}</a>
+                            </div>
+                            <hr>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if service.recipient_of_services.all %}
+                    <div class="card">
+                        <div class="card-header">
+                            Користувачі сервісу
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Посилання на персональні сторінки користувачів:</p>
+                            {% for recipient_of_services in service.recipient_of_services.all %}
+                                <a href="{% url "partner_detailed" name=recipient_of_services.partner.name %}"
+                                   class="btn btn-primary">{{ recipient_of_services.partner.name }} {{ recipient_of_services.partner.surname }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% if service.service_providers.all %}
+                    <div class="card">
+                        <div class="card-header">
+                            Відповідальні надавачі сервісу
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Посилання на персональні сторінки надавачів:</p>
+                            {% for service_provider in service.service_providers.all %}
+                                <a href="{% url "partner_detailed" name=service_provider.partner.name %}"
+                                   class="btn btn-primary">{{ service_provider.partner.name }} {{ service_provider.partner.surname }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% if service.rel_projects.all %}
+                    <div class="card">
+                        <div class="card-header">
+                            Пов'язані проєкти
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Посилання на сторінки проєктів:</p>
+                            {% for rel_projects in service.rel_projects.all %}
+                                <a href="#"
+                                   class="btn btn-primary">{{ rel_projects.title }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">...</div>
+        </div>
+    </div>
+    </div>
+{% endblock %}

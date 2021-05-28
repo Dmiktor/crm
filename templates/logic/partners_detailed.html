@@ -1,0 +1,245 @@
+{% extends 'logic/base.html' %}
+{% block content %}
+    <div class="container main-container">
+        <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home"
+                        type="button" role="tab" aria-controls="nav-home" aria-selected="true">Інформація
+                </button>
+                <button class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile"
+                        type="button" role="tab" aria-controls="nav-profile" aria-selected="false">Діяльність
+                </button>
+                <button class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact"
+                        type="button" role="tab" aria-controls="nav-contact" aria-selected="false">Примітки
+                </button>
+            </div>
+        </nav>
+        <div class="tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
+                <div class="card">
+                    <div class="card-header">
+                        Загальна
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ partner.name }} {{ partner.surname }}</h5>
+                        <hr>
+                        <div class="row">
+                            <div class="col">
+                                <div class="container">
+                                    <h5 class="card-title">Контакты:</h5>
+                                    <hr>
+                                    {% if partner.email %}
+                                        <p class="card-text">Електронна пошта: {{ partner.email }}</p>
+                                    {% endif %}
+                                    {% if partner.phone %}
+                                        <p class="card-text">Телефон: {{ partner.phone }}</p>
+                                    {% endif %}
+                                    {% if partner.phone2 %}
+                                        <p class="card-text">Телефон доп: {{ partner.phone2 }}</p>
+                                    {% endif %}
+                                    {% if partner.Telegram %}
+                                        <p class="card-text">Telegram: {{ partner.Telegram }}</p>
+                                    {% endif %}
+                                    {% if partner.skype %}
+                                        <p class="card-text">Skype: {{ partner.skype }}</p>
+                                    {% endif %}
+                                    {% if partner.notion %}
+                                        <p class="card-text">Notion: {{ partner.notion }}</p>
+                                    {% endif %}
+                                    <hr>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="container">
+
+                                    <h5 class="card-title">Посилання</h5>
+                                    <hr>
+                                    {% if partner.GoogleDisk %}
+                                        <a href="{{ partner.GoogleDisk }}" class="btn btn-primary">GoogleDisk</a>
+                                    {% endif %}
+                                    {% if partner.linkedIn %}
+                                        <a href="{{ partner.linkedIn }}" class="btn btn-primary">linkedIn</a>
+                                    {% endif %}
+                                    {% if partner.fb %}
+                                        <a href="{{ partner.fb }}" class="btn btn-primary">Facebook</a>
+                                    {% endif %}
+                                    {% if partner.personal_page %}
+                                        <a href="{{ partner.personal_page }}" class="btn btn-primary">Персональна
+                                            сторінка</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="container">
+                                    <h5 class="card-title">Мітки:</h5>
+                                    <p class="card-text">Це розробник? - {% if partner.isWorker %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-check-lg" viewBox="0 0 16 16">
+                                            <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                                        </svg> {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-x-lg" viewBox="0 0 16 16">
+                                            <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                                        </svg> {% endif %}</p>
+                                    <p class="card-text">Це партнер? - {% if partner.isPartner %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-check-lg" viewBox="0 0 16 16">
+                                            <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                                        </svg> {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-x-lg" viewBox="0 0 16 16">
+                                            <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                                        </svg> {% endif %}</p>
+                                    <p class="card-text">Це надавач сервісів? - {% if partner.isSeviceGiver %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-check-lg" viewBox="0 0 16 16">
+                                            <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                                        </svg> {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-x-lg" viewBox="0 0 16 16">
+                                            <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                                        </svg> {% endif %}</p>
+                                    <p class="card-text">Це користувач сервісів? - {% if partner.isSeviceTaker %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-check-lg" viewBox="0 0 16 16">
+                                            <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                                        </svg> {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-x-lg" viewBox="0 0 16 16">
+                                            <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                                        </svg> {% endif %}</p>
+                                    <p class="card-text">Це інвестор? - {% if partner.isInvestor %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-check-lg" viewBox="0 0 16 16">
+                                            <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                                        </svg> {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-x-lg" viewBox="0 0 16 16">
+                                            <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                                        </svg> {% endif %}</p>
+                                    <p class="card-text">Це студент? - {% if partner.isStudent %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-check-lg" viewBox="0 0 16 16">
+                                            <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                                        </svg> {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             fill="currentColor"
+                                             class="bi bi-x-lg" viewBox="0 0 16 16">
+                                            <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                                        </svg> {% endif %}</p>
+                                </div>
+                            </div>
+                            <div class="col">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% if worker %}
+                    <div class="card">
+                        <div class="card-header">
+                            Як про розробника
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Установа: {{ worker.org }}</p>
+                            <p class="card-text">Посада: {{ worker.position }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
+                {% if workersTeams %}
+                    <div class="card">
+                        <div class="card-header">
+                            Пов'язаний з командами
+                        </div>
+                        {% for workersTeam in workersTeams %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ workersTeam.title }}</h5>
+                                <hr>
+                                <p class="card-text">Відповідальна за команду особа:</p>
+                                <a href="{% url 'partner_detailed' name=workersTeam.rel_partner.name %}"
+                                   class="btn btn-primary">{{ workersTeam.rel_partner.name }}</a>
+                                <hr>
+                                <p class="card-text">Розробник в цій команді:</p>
+                                {% for woorker in workersTeam.workers.all %}
+                                    <a href="{% url 'partner_detailed' name=woorker.partner.name %}"
+                                       class="btn btn-primary">{{ woorker.partner.name }}</a>
+                                {% endfor %}
+                                <hr>
+                                <p class="card-text">Проэкт:</p>
+                                <a href="#"
+                                   class="btn btn-primary">{{ workersTeam.project.title }}</a>
+                            </div>
+                            <hr>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if gived_sevices %}
+                    <div class="card">
+                        <div class="card-header">
+                            Надає сервіси
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Посилання на детальну інформацію по сервісах:</p>
+                            {% for sevices in gived_sevices %}
+                                <a href="{% url "service_detailed" title=sevices.title %}"
+                                   class="btn btn-primary">{{ sevices.title }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% if gotet_sevices %}
+                    <div class="card">
+                        <div class="card-header">
+                            Отримує Сервіси
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Посилання на детальну інформацію по сервісах:</p>
+                            {% for sevices in gotet_sevices %}
+                                <a href="{% url "service_detailed" title=sevices.title %}"
+                                   class="btn btn-primary">{{ sevices.title }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
+                <a class="btn btn-primary float-end" href="{% url 'action_profile_new' name=partner.name %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                         class="bi bi-plus-lg" viewBox="0 0 16 16">
+                        <path d="M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z"/>
+                    </svg>
+                </a>
+                <br>
+                {% for action in actions %}
+                    <div class="card">
+                        <div class="card-header">
+                            {{ action.date }}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ action.main | safe }}</h5>
+                            <hr>
+                            <p class="card-text">{{ action.full | safe }}</p>
+                            <hr>
+                            <p class="float-end">Відповідальний менеджер: {{ action.rel_manager.get_full_name }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    </div>
+{% endblock %}
