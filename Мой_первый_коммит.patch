@@ -1,0 +1,3137 @@
+Index: CRM/settings.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- CRM/settings.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ CRM/settings.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -23,16 +23,24 @@
+ 
+ # SECURITY WARNING: don't run with debug turned on in production!
+ DEBUG = True
+-
+-ALLOWED_HOSTS = []
++AUTH_USER_MODEL = "account.Account"
++AUTHENTICATION_BACKENDS = (
++    'django.contrib.auth.backends.AllowAllUsersModelBackend',
++    'account.backends.CaseInsensitiveModelBackend',
++)
++ALLOWED_HOSTS = ['26.67.244.114', '127.0.0.1', '192.168.0.1', '212.80.35.208', '192.168.0.103']
+ 
+ # Application definition
+ 
+ INSTALLED_APPS = [
++    # Opensrs
+     'phonenumber_field',
+     'ckeditor',
+     'taggit',
++    # My apps
+     'logic',
++    'account',
++    # Django app
+     'django.contrib.admin',
+     'django.contrib.auth',
+     'django.contrib.contenttypes',
+Index: CRM/urls.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- CRM/urls.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ CRM/urls.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -19,6 +19,7 @@
+ from django.conf.urls.static import static
+ 
+ urlpatterns = [
+-    path('admin/', admin.site.urls),
+-    path('', include('logic.urls')),
+-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
++                  path('admin/', admin.site.urls),
++                  path('account/', include('account.urls')),
++                  path('', include('logic.urls')),
++              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+Index: account/admin.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/admin.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/admin.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,16 @@
++from django.contrib import admin
++from django.contrib.auth.admin import UserAdmin
++
++from account.models import Account
++
++
++class AccountAdmin(UserAdmin):
++    list_display = ('email', 'username', 'date_joined', 'last_login', 'is_admin', 'is_staff')
++    search_fields = ('email', 'username')
++    readonly_fields = ('id', 'date_joined', 'last_login')
++    filter_horizontal = ()
++    list_filter = ()
++    fieldsets = ()
++
++
++admin.site.register(Account, AccountAdmin)
+Index: account/apps.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/apps.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/apps.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,5 @@
++from django.apps import AppConfig
++
++
++class AccountConfig(AppConfig):
++    name = 'account'
+Index: account/backends.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/backends.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/backends.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,19 @@
++from django.contrib.auth import get_user_model
++from django.contrib.auth.backends import ModelBackend
++
++
++class CaseInsensitiveModelBackend(ModelBackend):
++    def authenticate(self, request, username=None, password=None, **kwargs):
++        UserModel = get_user_model()
++        if username is None:
++            username = kwargs.get(UserModel.USERNAME_FIELD)
++        try:
++            case_insensitive_username_field = '{}__iexact'.format(UserModel.USERNAME_FIELD)
++            user = UserModel._default_manager.get(**{case_insensitive_username_field: username})
++        except UserModel.DoesNotExist:
++            # Run the default password hasher once to reduce the timing
++            # difference between an existing and a non-existing user (#20760).
++            UserModel().set_password(password)
++        else:
++            if user.check_password(password) and self.user_can_authenticate(user):
++                return user
+Index: account/forms.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/forms.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/forms.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,21 @@
++from django import forms
++from django.contrib.auth.forms import UserCreationForm
++from django.contrib.auth import authenticate
++
++from account.models import Account
++
++
++class AccountForm(forms.ModelForm):
++   
++    password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
++   
++    class Meta:
++        model = Account
++        fields = ('email', 'password')
++        
++    def clean(self):
++        if self.is_valid():
++            email = self.cleaned_data['email']
++            password = self.cleaned_data['password']
++            if not authenticate(email=email, password=password):
++                raise forms.ValidationError("Невірний логін або пароль")
+Index: account/migrations/0001_initial.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/migrations/0001_initial.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/migrations/0001_initial.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,32 @@
++# Generated by Django 3.1.5 on 2021-07-13 17:53
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    initial = True
++
++    dependencies = [
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='Account',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('password', models.CharField(max_length=128, verbose_name='password')),
++                ('email', models.EmailField(max_length=60, unique=True, verbose_name='email')),
++                ('username', models.CharField(max_length=30, unique=True)),
++                ('date_joined', models.DateField(auto_now_add=True, verbose_name='date joined')),
++                ('last_login', models.DateField(auto_now=True, verbose_name='last login')),
++                ('is_admin', models.BooleanField(default=False)),
++                ('is_active', models.BooleanField(default=True)),
++                ('is_staff', models.BooleanField(default=False)),
++                ('is_superuser', models.BooleanField(default=False)),
++            ],
++            options={
++                'abstract': False,
++            },
++        ),
++    ]
+Index: account/migrations/0002_auto_20210714_0959.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/migrations/0002_auto_20210714_0959.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/migrations/0002_auto_20210714_0959.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,23 @@
++# Generated by Django 3.1.5 on 2021-07-14 06:59
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('account', '0001_initial'),
++    ]
++
++    operations = [
++        migrations.AddField(
++            model_name='account',
++            name='Last_name',
++            field=models.CharField(blank=True, max_length=40),
++        ),
++        migrations.AddField(
++            model_name='account',
++            name='first_name',
++            field=models.CharField(blank=True, max_length=40),
++        ),
++    ]
+Index: account/migrations/0003_auto_20210714_1005.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/migrations/0003_auto_20210714_1005.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/migrations/0003_auto_20210714_1005.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,18 @@
++# Generated by Django 3.1.5 on 2021-07-14 07:05
++
++from django.db import migrations
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('account', '0002_auto_20210714_0959'),
++    ]
++
++    operations = [
++        migrations.RenameField(
++            model_name='account',
++            old_name='Last_name',
++            new_name='last_name',
++        ),
++    ]
+Index: account/migrations/0004_auto_20210714_1007.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/migrations/0004_auto_20210714_1007.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/migrations/0004_auto_20210714_1007.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,23 @@
++# Generated by Django 3.1.5 on 2021-07-14 07:07
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('account', '0003_auto_20210714_1005'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='account',
++            name='first_name',
++            field=models.CharField(max_length=40),
++        ),
++        migrations.AlterField(
++            model_name='account',
++            name='last_name',
++            field=models.CharField(max_length=40),
++        ),
++    ]
+Index: account/models.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/models.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/models.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,75 @@
++from django.db import models
++from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
++from django.utils.crypto import get_random_string
++
++
++class MyAccountManager(BaseUserManager):
++
++    def create_user(self, email, username, password=None):
++        if not email:
++            raise ValueError("Користувач повинен мати електронну пошту.")
++        if not username:
++            raise ValueError("Користувач повинен мати логін.")
++        user = self.model(
++            email=self.normalize_email(email),
++            username=username,
++        )
++        user.set_password(password)
++        user.save(using=self._db)
++        return user
++
++    def create_user_password(self, email, username, password=None):
++        if not email:
++            raise ValueError("Користувач повинен мати електронну пошту.")
++        if not username:
++            raise ValueError("Користувач повинен мати логін.")
++        user = self.model(
++            email=self.normalize_email(email),
++            username=username,
++            password=get_random_string(length=8)
++        )
++        user.save(using=self._db)
++        return user
++
++    def create_superuser(self, email, username, password):
++        user = self.create_user(
++            email=self.normalize_email(email),
++            username=username,
++            password=password,
++        )
++        user.is_admin = True
++        user.is_staff = True
++        user.is_superuser = True
++        user.save(using=self._db)
++        return user
++
++
++class Account(AbstractBaseUser):
++    email = models.EmailField(verbose_name="email", max_length=60, unique=True)
++    username = models.CharField(max_length=30, unique=True)
++    date_joined = models.DateField(verbose_name='date joined', auto_now_add=True)
++    last_login = models.DateField(verbose_name='last login', auto_now=True)
++    is_admin = models.BooleanField(default=False)
++    is_active = models.BooleanField(default=True)
++    is_staff = models.BooleanField(default=False)
++    is_superuser = models.BooleanField(default=False)
++
++    first_name = models.CharField(max_length=40)
++    last_name = models.CharField(max_length=40)
++
++    objects = MyAccountManager()
++
++    USERNAME_FIELD = 'email'
++    REQUIRED_FIELDS = ['username']
++
++    def __str__(self):
++        return self.username
++
++    def get_full_name(self):
++        return ("%s %s" % (self.last_name, self.first_name)).strip()
++
++    def has_perm(self, perm, obj=None):
++        return self.is_admin
++
++    def has_module_perms(self, app_label):
++        return True
+Index: account/tests.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/tests.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/tests.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,3 @@
++from django.test import TestCase
++
++# Create your tests here.
+Index: account/urls.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/urls.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/urls.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,7 @@
++from django.urls import path
++from . import views
++
++urlpatterns = [
++    path('log_in', views.login_in, name='login_in'),
++    path('log_out', views.login_out, name='login_out'),
++]
+Index: account/views.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- account/views.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ account/views.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,35 @@
++from django.shortcuts import render, redirect
++from django.contrib.auth import login, authenticate, logout
++from account.forms import AccountForm
++
++
++# Create your views here.
++
++def login_out(request):
++    logout(request)
++    return redirect("home")
++
++
++def login_in(request):
++    context = {}
++    user = request.user
++
++    if user.is_authenticated:
++        return redirect("home")
++
++    form = AccountForm()
++
++    if request.POST:
++        form = AccountForm(request.POST)
++        if form.is_valid():
++            email = request.POST['email']
++            password = request.POST['password']
++            user = authenticate(email=email, password=password)
++            if user:
++                login(request, user)
++                return redirect("home")
++            else:
++                context['error'] = "Невірний логін або пароль"
++
++    context['login_form'] = form
++    return render(request, 'login/login.html', context)
+Index: logic/admin.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/admin.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/admin.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -1,5 +1,6 @@
+ from django.contrib import admin
+-from .models import Event, Partner, WorkerProfile, WorkersTeam, Project, Action, ServiceProvider, Service, RecipientServices
++from .models import Event, Partner, WorkerProfile, WorkersTeam, Project, Action, ServiceProvider, Service, \
++    RecipientServices
+ 
+ # Register your models here.
+ 
+@@ -12,4 +13,3 @@
+ admin.site.register(ServiceProvider)
+ admin.site.register(Service)
+ admin.site.register(RecipientServices)
+-
+Index: logic/forms.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/forms.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/forms.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -1,5 +1,11 @@
++from venv import logger
++
+ from django import forms
+-from .models import Action
++from django.core.exceptions import ValidationError
++from django.forms import EmailInput, URLInput, CheckboxInput, TextInput, Textarea, Select
++from django.shortcuts import get_object_or_404
++
++from .models import *
+ 
+ 
+ class DateInput(forms.DateInput):
+@@ -11,5 +17,185 @@
+         model = Action
+         fields = ('main', 'full', 'date')
+         widgets = {
++            'main': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Вкажіть тему  вчиненої дії'
++            }),
++            'full': Textarea(attrs={
++                'class': 'form-control',
++                'placeholder': 'Вкажіть короткий опис вчиненої дії',
++            }),
++
+             'date': DateInput()
+         }
++
++
++class PartnerForm(forms.ModelForm):
++    class Meta:
++        model = Partner
++        fields = ('name',
++                  'surname',
++                  'nameEn',
++                  'surnameEn',
++                  'email',
++                  'phone',
++                  'phone2',
++                  'Telegram',
++                  'info',
++                  'adress',
++                  'notion',
++                  'linkedIn',
++                  'personal_page',
++                  'skype',
++                  'fb',
++                  'valid',
++                  )
++        widgets = {
++            'name': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Ваше ім`я Українською'
++            }),
++            'surname': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Ваше прізвище Українською'
++            }),
++            'nameEn': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Ваше ім`я Англійською'
++            }),
++            'surnameEn': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Ваше прізвище Англійською'
++            }),
++            'email': EmailInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Ваш Email'
++            }),
++            'info': Textarea(attrs={
++                'class': 'form-control',
++                'placeholder': 'Доп. інформація',
++            }),
++            'phone': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Номер вашого телефону',
++            }),
++            'phone2': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Додатковий номер вашого телефону',
++            }),
++            'adress': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Ваша адресса',
++            }),
++            'Telegram': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Ваш Telegram'
++            }),
++            'skype': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Ваш Skype'
++            }),
++            'notion': URLInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Посилання на ваш Notion',
++            }),
++            'linkedIn': URLInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Посилання на ваш linkedIn',
++            }),
++            'personal_page': URLInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Посилання на вашу персональну сторінку',
++            }),
++            'fb': URLInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Посилання на ваш Facebook',
++            }),
++            'valid': CheckboxInput(attrs={
++                'label': 'Ви даєте право на обробку ваших персональних даних?',
++                'class': 'form-check-input'
++            }),
++        }
++
++    def clean_valid(self):
++        valid = self.cleaned_data['valid']
++        if not valid:
++            raise ValidationError(
++                "Ви не дали нам право на обробку ваших даних! Без цього ми не маємо право внести вас в систему.")
++        return valid
++
++
++class PartnerFormSecond(forms.ModelForm):
++    class Meta:
++        model = Partner
++        fields = ('isWorker', 'isSeviceGiver', 'isInvestor', 'isStudent',)
++        widgets = {
++            'isWorker': CheckboxInput(attrs={
++                'class': 'form-check-input',
++                'placeholder': 'Вы Розробник?',
++            }),
++            'isSeviceGiver': CheckboxInput(attrs={
++                'class': 'form-check-input',
++                'placeholder': 'Сервіси?',
++            }),
++            'isInvestor': CheckboxInput(attrs={
++                'class': 'form-check-input',
++                'placeholder': 'Інвестор?',
++            }),
++            'isStudent': CheckboxInput(attrs={
++                'class': 'form-check-input',
++                'placeholder': 'Студент?',
++            }),
++        }
++
++
++class WorkerProfileReg(forms.ModelForm):
++    class Meta:
++        model = WorkerProfile
++        fields = ('org', 'position')
++        widgets = {
++            'org': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Установа де ви працюєте'
++            }),
++            'position': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Ваша посада'
++            }),
++        }
++
++
++class WorkersTeamReg(forms.ModelForm):
++    class Meta:
++        model = WorkersTeam
++        fields = ('titleW',)
++        widgets = {
++            'titleW': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Назва вашої проектної команди *не обов`язково',
++            }),
++        }
++
++
++class ProjectReg(forms.ModelForm):
++    class Meta:
++        model = Project
++        fields = ('title', 'main', 'category', 'projectStage',)
++        widgets = {
++            'title': TextInput(attrs={
++                'class': 'form-control',
++                'placeholder': 'Коротка назва розробки'
++            }),
++            'main': Textarea(attrs={
++                'class': 'form-control',
++                'placeholder': 'Сутність та стислий опис',
++            }),
++            'category': Select(attrs={
++                'class': 'form-select',
++                'placeholder': 'Галузь',
++            }),
++            'projectStage': Select(attrs={
++                'class': 'form-select',
++                'placeholder': 'Ступінь готовності розробки',
++            }),
++        }
+Index: logic/migrations/0001_initial.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/migrations/0001_initial.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0001_initial.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -1,10 +1,11 @@
+-# Generated by Django 3.1.5 on 2021-05-13 12:19
++# Generated by Django 3.1.5 on 2021-07-13 17:53
+ 
+ import ckeditor.fields
+ from django.conf import settings
+ from django.db import migrations, models
+ import django.db.models.deletion
+ import phonenumber_field.modelfields
++import taggit.managers
+ 
+ 
+ class Migration(migrations.Migration):
+@@ -13,6 +14,7 @@
+ 
+     dependencies = [
+         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('taggit', '0003_taggeditem_add_unique_index'),
+     ]
+ 
+     operations = [
+@@ -23,7 +25,7 @@
+                 ('title', models.CharField(max_length=200, verbose_name='Назва')),
+                 ('slug', models.SlugField(blank=True, max_length=255, unique=True, verbose_name='Унікальна Адресса')),
+                 ('date', models.DateField(blank=True, null=True, verbose_name='Дата')),
+-                ('main', ckeditor.fields.RichTextField(blank=True, max_length=600, verbose_name='Короткий текст')),
++                ('main', models.TextField(blank=True, max_length=600, verbose_name='Короткий текст')),
+                 ('full', ckeditor.fields.RichTextField(blank=True, null=True, verbose_name='Повний текст')),
+                 ('category', models.CharField(choices=[('eco', 'Екологія'), ('bio', 'Біотехнології'), ('mat', 'Матеріалознавство'), ('enr', 'Енергія'), ('all', 'Усі')], default='all', max_length=3, verbose_name='Тематика')),
+                 ('pub', models.CharField(choices=[('int', 'Внутрішній'), ('ext', 'Зовнішній')], default='int', max_length=3, verbose_name='Публічність')),
+@@ -46,9 +48,34 @@
+                 ('adress', models.CharField(blank=True, max_length=70, verbose_name='Адреса')),
+                 ('notion', models.CharField(blank=True, max_length=30, verbose_name='Notion')),
+                 ('linkedIn', models.URLField(blank=True, default='#', verbose_name='Посилання на linkedIn')),
++                ('personal_page', models.URLField(blank=True, default='#', verbose_name='Посилання на персональну сторінку')),
+                 ('skype', models.CharField(blank=True, max_length=30, verbose_name='Skype')),
+                 ('fb', models.URLField(blank=True, default='#', verbose_name='Посилання на Facebook')),
+-                ('clientType', models.CharField(choices=[('pot', 'Потенційний'), ('Внутрішній', (('sud', 'Студент'), ('wor', 'Розробник'))), ('Зовнішній', (('inv', 'Інвестор'), ('ser', 'Надувач сервісу')))], default='pot', max_length=3, verbose_name='Тип партнера')),
++                ('isWorker', models.BooleanField(default=False, verbose_name='Розробник?')),
++                ('isPartner', models.BooleanField(default=False, verbose_name='Партнер?')),
++                ('isSeviceGiver', models.BooleanField(default=False, verbose_name='Надавач сервісів?')),
++                ('isSeviceTaker', models.BooleanField(default=False, verbose_name='Користувач сервісів?')),
++                ('isInvestor', models.BooleanField(default=False, verbose_name='Інвестор?')),
++                ('isStudent', models.BooleanField(default=False, verbose_name='Студент?')),
++            ],
++        ),
++        migrations.CreateModel(
++            name='Project',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('title', models.CharField(max_length=60, verbose_name='Коротка назва розробки')),
++                ('main', ckeditor.fields.RichTextField(blank=True, max_length=600, verbose_name='Сутність та стислий опис')),
++                ('category', models.CharField(choices=[('eco', 'Екологія'), ('bio', 'Біотехнології'), ('mat', 'Матеріалознавство'), ('enr', 'Енергія'), ('all', 'Усі')], default='all', max_length=3, verbose_name='Галузь')),
++                ('projectStage', models.CharField(choices=[('rec', 'Дослідження та експериментальне підтвердження'), ('ttl', 'Технологія, перевірена в лабораторії'), ('pro', 'Наявний прототип'), ('tia', 'Технологія має промислові застосування')], default='rec', max_length=3, verbose_name='Ступінь готовності розробки')),
++                ('firstvalid', models.BooleanField(default=False, verbose_name='Перша валідіфікація')),
++            ],
++        ),
++        migrations.CreateModel(
++            name='RecipientServices',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('partner', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='logic.partner', verbose_name="Пов'язаний Участник")),
++                ('partnerTags', taggit.managers.TaggableManager(help_text='A comma-separated list of tags.', through='taggit.TaggedItem', to='taggit.Tag', verbose_name='Список зацікавивших тегів')),
+             ],
+         ),
+         migrations.CreateModel(
+@@ -57,7 +84,7 @@
+                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                 ('org', models.CharField(blank=True, max_length=40, verbose_name='Установа')),
+                 ('position', models.CharField(blank=True, max_length=30, verbose_name='Посада')),
+-                ('partner', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='logic.partner')),
++                ('partner', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='logic.partner', verbose_name="Пов'язаний Участник")),
+             ],
+         ),
+         migrations.CreateModel(
+@@ -65,30 +92,53 @@
+             fields=[
+                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                 ('title', models.CharField(max_length=60, verbose_name='Назва команди')),
+-                ('workers', models.ManyToManyField(to='logic.WorkerProfile')),
++                ('rel_partner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='logic.partner', verbose_name='Відповідальна за команду особа')),
++                ('workers', models.ManyToManyField(to='logic.WorkerProfile', verbose_name="Пов'язані розробники")),
+             ],
+         ),
+         migrations.CreateModel(
+-            name='Project',
++            name='ServiceProvider',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('partner', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='logic.partner', verbose_name="Пов'язаний Участник")),
++            ],
++        ),
++        migrations.CreateModel(
++            name='Service',
+             fields=[
+                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+-                ('title', models.CharField(max_length=60, verbose_name='Назва проєкту')),
+-                ('main', ckeditor.fields.RichTextField(blank=True, max_length=600, verbose_name='Короткий проєкту')),
+-                ('category', models.CharField(choices=[('eco', 'Екологія'), ('bio', 'Біотехнології'), ('mat', 'Матеріалознавство'), ('enr', 'Енергія'), ('all', 'Усі')], default='all', max_length=3, verbose_name='Тематика')),
+-                ('projectTeams', models.ManyToManyField(to='logic.WorkersTeam')),
++                ('title', models.CharField(max_length=60, verbose_name='Назва сервісу')),
++                ('full', ckeditor.fields.RichTextField(blank=True, null=True, verbose_name='Опис')),
++                ('price', models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Вартість у грн.')),
++                ('terms', models.TextField(blank=True, max_length=250, verbose_name='Умови надання')),
++                ('target', models.TextField(blank=True, max_length=600, verbose_name='Цільова аудиторія')),
++                ('category', models.CharField(choices=[('eco', 'Екологія'), ('bio', 'Біотехнології'), ('mat', 'Матеріалознавство'), ('enr', 'Енергія'), ('all', 'Усі')], default='all', max_length=3, verbose_name='Цільова тематика')),
++                ('partnerTags', taggit.managers.TaggableManager(help_text='A comma-separated list of tags.', through='taggit.TaggedItem', to='taggit.Tag', verbose_name='Список тегів сервісу')),
++                ('recipient_of_services', models.ManyToManyField(blank=True, to='logic.RecipientServices', verbose_name='Ожержувачі сервісів')),
++                ('rel_projects', models.ManyToManyField(blank=True, to='logic.Project', verbose_name="Пов'язані проєкти")),
++                ('service_providers', models.ManyToManyField(to='logic.ServiceProvider', verbose_name='Відровідальні надувачі сервісів')),
+             ],
++        ),
++        migrations.AddField(
++            model_name='project',
++            name='projectTeams',
++            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='logic.workersteam', verbose_name="Пов'язана проєктна команда"),
++        ),
++        migrations.AddField(
++            model_name='project',
++            name='rel_manager',
++            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL, verbose_name="Пов'язаний менеджер"),
+         ),
+         migrations.CreateModel(
+             name='Action',
+             fields=[
+                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                 ('date', models.DateField(blank=True, null=True, verbose_name='Дата')),
+-                ('main', ckeditor.fields.RichTextField(blank=True, max_length=250, verbose_name='Тема')),
+-                ('full', ckeditor.fields.RichTextField(blank=True, null=True, verbose_name='Опис')),
+-                ('WorkerProfile', models.ForeignKey(blank=True, on_delete=django.db.models.deletion.CASCADE, to='logic.workerprofile')),
+-                ('partner', models.ForeignKey(blank=True, on_delete=django.db.models.deletion.CASCADE, to='logic.partner')),
+-                ('project', models.ForeignKey(blank=True, on_delete=django.db.models.deletion.CASCADE, to='logic.project')),
+-                ('rel_manager', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
++                ('main', models.TextField(blank=True, max_length=250, verbose_name='Тема')),
++                ('full', models.TextField(blank=True, null=True, verbose_name='Опис')),
++                ('partner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='logic.partner', verbose_name="Пов'язаний Участник")),
++                ('project', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='logic.project', verbose_name="Пов'язаний Проєкт")),
++                ('rel_manager', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, verbose_name="Пов'язаний менеджер")),
+             ],
+         ),
+     ]
+Index: logic/migrations/0002_auto_20210513_2110.py
+===================================================================
+--- logic/migrations/0002_auto_20210513_2110.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0002_auto_20210513_2110.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,53 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-13 18:10
+-
+-import ckeditor.fields
+-from django.db import migrations, models
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('logic', '0001_initial'),
+-    ]
+-
+-    operations = [
+-        migrations.RemoveField(
+-            model_name='partner',
+-            name='clientType',
+-        ),
+-        migrations.AddField(
+-            model_name='partner',
+-            name='isInvestor',
+-            field=models.BooleanField(default=False, verbose_name='Інвестор?'),
+-        ),
+-        migrations.AddField(
+-            model_name='partner',
+-            name='isPartner',
+-            field=models.BooleanField(default=False, verbose_name='Партнер?'),
+-        ),
+-        migrations.AddField(
+-            model_name='partner',
+-            name='isSeviceGiver',
+-            field=models.BooleanField(default=False, verbose_name='Надавач сервісів?'),
+-        ),
+-        migrations.AddField(
+-            model_name='partner',
+-            name='isSeviceTaker',
+-            field=models.BooleanField(default=False, verbose_name='Користувач сервісів?'),
+-        ),
+-        migrations.AddField(
+-            model_name='partner',
+-            name='isStudent',
+-            field=models.BooleanField(default=False, verbose_name='Студент?'),
+-        ),
+-        migrations.AddField(
+-            model_name='partner',
+-            name='isWorker',
+-            field=models.BooleanField(default=False, verbose_name='Робітник?'),
+-        ),
+-        migrations.AlterField(
+-            model_name='project',
+-            name='main',
+-            field=ckeditor.fields.RichTextField(blank=True, max_length=600, verbose_name='Короткий опис проєкту'),
+-        ),
+-    ]
+Index: logic/migrations/0002_partner_indef.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/migrations/0002_partner_indef.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ logic/migrations/0002_partner_indef.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,19 @@
++# Generated by Django 3.1.5 on 2021-07-14 09:01
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('logic', '0001_initial'),
++    ]
++
++    operations = [
++        migrations.AddField(
++            model_name='partner',
++            name='indef',
++            field=models.CharField(default='basad', editable=False, max_length=10),
++            preserve_default=False,
++        ),
++    ]
+Index: logic/migrations/0003_auto_20210714_1817.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/migrations/0003_auto_20210714_1817.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ logic/migrations/0003_auto_20210714_1817.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,33 @@
++# Generated by Django 3.1.5 on 2021-07-14 15:17
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('logic', '0002_partner_indef'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='partner',
++            name='GoogleDisk',
++            field=models.URLField(verbose_name='Посилання на гугл диск'),
++        ),
++        migrations.AlterField(
++            model_name='partner',
++            name='fb',
++            field=models.URLField(blank=True, verbose_name='Посилання на Facebook'),
++        ),
++        migrations.AlterField(
++            model_name='partner',
++            name='linkedIn',
++            field=models.URLField(blank=True, verbose_name='Посилання на linkedIn'),
++        ),
++        migrations.AlterField(
++            model_name='partner',
++            name='personal_page',
++            field=models.URLField(blank=True, verbose_name='Посилання на персональну сторінку'),
++        ),
++    ]
+Index: logic/migrations/0003_remove_action_workerprofile.py
+===================================================================
+--- logic/migrations/0003_remove_action_workerprofile.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0003_remove_action_workerprofile.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,17 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-14 10:00
+-
+-from django.db import migrations
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('logic', '0002_auto_20210513_2110'),
+-    ]
+-
+-    operations = [
+-        migrations.RemoveField(
+-            model_name='action',
+-            name='WorkerProfile',
+-        ),
+-    ]
+Index: logic/migrations/0004_auto_20210514_1302.py
+===================================================================
+--- logic/migrations/0004_auto_20210514_1302.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0004_auto_20210514_1302.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,24 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-14 10:02
+-
+-from django.db import migrations, models
+-import django.db.models.deletion
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('logic', '0003_remove_action_workerprofile'),
+-    ]
+-
+-    operations = [
+-        migrations.AlterField(
+-            model_name='action',
+-            name='partner',
+-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='logic.partner'),
+-        ),
+-        migrations.AlterField(
+-            model_name='action',
+-            name='project',
+-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='logic.project'),
+-        ),
+-    ]
+Index: logic/migrations/0004_auto_20210714_1915.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/migrations/0004_auto_20210714_1915.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ logic/migrations/0004_auto_20210714_1915.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,18 @@
++# Generated by Django 3.1.5 on 2021-07-14 16:15
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('logic', '0003_auto_20210714_1817'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='partner',
++            name='GoogleDisk',
++            field=models.URLField(blank=True, verbose_name='Посилання на гугл диск'),
++        ),
++    ]
+Index: logic/migrations/0005_auto_20210714_1941.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/migrations/0005_auto_20210714_1941.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ logic/migrations/0005_auto_20210714_1941.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,18 @@
++# Generated by Django 3.1.5 on 2021-07-14 16:41
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('logic', '0004_auto_20210714_1915'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='partner',
++            name='info',
++            field=models.TextField(blank=True, max_length=600, verbose_name='Інф.'),
++        ),
++    ]
+Index: logic/migrations/0006_auto_20210518_0800.py
+===================================================================
+--- logic/migrations/0006_auto_20210518_0800.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0006_auto_20210518_0800.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,86 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-18 05:00
+-
+-import ckeditor.fields
+-from django.conf import settings
+-from django.db import migrations, models
+-import django.db.models.deletion
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+-        ('logic', '0005_auto_20210514_1353'),
+-    ]
+-
+-    operations = [
+-        migrations.CreateModel(
+-            name='RecipientServices',
+-            fields=[
+-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+-            ],
+-        ),
+-        migrations.AddField(
+-            model_name='partner',
+-            name='personal_page',
+-            field=models.URLField(blank=True, default='#', verbose_name='Посилання на персональну сторінку'),
+-        ),
+-        migrations.AlterField(
+-            model_name='action',
+-            name='partner',
+-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='logic.partner', verbose_name="Пов'язаний Участник"),
+-        ),
+-        migrations.AlterField(
+-            model_name='action',
+-            name='project',
+-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='logic.project', verbose_name="Пов'язаний Проєкт"),
+-        ),
+-        migrations.AlterField(
+-            model_name='action',
+-            name='rel_manager',
+-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, verbose_name="Пов'язаний менеджер"),
+-        ),
+-        migrations.AlterField(
+-            model_name='project',
+-            name='projectTeams',
+-            field=models.ManyToManyField(to='logic.WorkersTeam', verbose_name="Пов'язана проєктна команда"),
+-        ),
+-        migrations.AlterField(
+-            model_name='workerprofile',
+-            name='partner',
+-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='logic.partner', verbose_name="Пов'язаний Участник"),
+-        ),
+-        migrations.AlterField(
+-            model_name='workersteam',
+-            name='workers',
+-            field=models.ManyToManyField(to='logic.WorkerProfile', verbose_name="Пов'язані розробники"),
+-        ),
+-        migrations.CreateModel(
+-            name='ServiceProvider',
+-            fields=[
+-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+-                ('partner', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='logic.partner', verbose_name="Пов'язаний Участник")),
+-            ],
+-        ),
+-        migrations.CreateModel(
+-            name='Service',
+-            fields=[
+-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+-                ('title', models.CharField(max_length=60, verbose_name='Назва сервісу')),
+-                ('full', ckeditor.fields.RichTextField(blank=True, null=True, verbose_name='Опис')),
+-                ('price', models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Вартість у грн.')),
+-                ('main', ckeditor.fields.RichTextField(blank=True, max_length=250, verbose_name='Тема')),
+-                ('terms', ckeditor.fields.RichTextField(blank=True, max_length=250, verbose_name='Умови надання')),
+-                ('target', ckeditor.fields.RichTextField(blank=True, max_length=600, verbose_name='Цільова аудиторія')),
+-                ('category', models.CharField(choices=[('eco', 'Екологія'), ('bio', 'Біотехнології'), ('mat', 'Матеріалознавство'), ('enr', 'Енергія'), ('all', 'Усі')], default='all', max_length=3, verbose_name='Цільова тематика')),
+-                ('recipient_of_services', models.ManyToManyField(blank=True, to='logic.RecipientServices', verbose_name='Ожержувачі сервісів')),
+-                ('rel_projects', models.ManyToManyField(blank=True, to='logic.Project', verbose_name="Пов'язані проєкти")),
+-                ('service_providers', models.ManyToManyField(to='logic.ServiceProvider', verbose_name='Відровідальні надувачі сервісів')),
+-            ],
+-        ),
+-        migrations.AddField(
+-            model_name='recipientservices',
+-            name='partner',
+-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='logic.partner', verbose_name="Пов'язаний Участник"),
+-        ),
+-    ]
+Index: logic/migrations/0006_partner_valid.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/migrations/0006_partner_valid.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ logic/migrations/0006_partner_valid.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,18 @@
++# Generated by Django 3.1.5 on 2021-07-14 17:06
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('logic', '0005_auto_20210714_1941'),
++    ]
++
++    operations = [
++        migrations.AddField(
++            model_name='partner',
++            name='valid',
++            field=models.BooleanField(default=False, editable=False),
++        ),
++    ]
+Index: logic/migrations/0007_auto_20210714_2013.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/migrations/0007_auto_20210714_2013.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ logic/migrations/0007_auto_20210714_2013.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,18 @@
++# Generated by Django 3.1.5 on 2021-07-14 17:13
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('logic', '0006_partner_valid'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='partner',
++            name='valid',
++            field=models.BooleanField(default=False),
++        ),
++    ]
+Index: logic/migrations/0007_workersteam_rel_partner.py
+===================================================================
+--- logic/migrations/0007_workersteam_rel_partner.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0007_workersteam_rel_partner.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,19 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-18 05:13
+-
+-from django.db import migrations, models
+-import django.db.models.deletion
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('logic', '0006_auto_20210518_0800'),
+-    ]
+-
+-    operations = [
+-        migrations.AddField(
+-            model_name='workersteam',
+-            name='rel_partner',
+-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='logic.partner', verbose_name='Відповідальна за команду особа'),
+-        ),
+-    ]
+Index: logic/migrations/0008_auto_20210518_0824.py
+===================================================================
+--- logic/migrations/0008_auto_20210518_0824.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0008_auto_20210518_0824.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,18 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-18 05:24
+-
+-from django.db import migrations, models
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('logic', '0007_workersteam_rel_partner'),
+-    ]
+-
+-    operations = [
+-        migrations.AlterField(
+-            model_name='partner',
+-            name='isWorker',
+-            field=models.BooleanField(default=False, verbose_name='Розробник?'),
+-        ),
+-    ]
+Index: logic/migrations/0008_auto_20210716_0242.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/migrations/0008_auto_20210716_0242.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ logic/migrations/0008_auto_20210716_0242.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,23 @@
++# Generated by Django 3.1.5 on 2021-07-15 23:42
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('logic', '0007_auto_20210714_2013'),
++    ]
++
++    operations = [
++        migrations.RenameField(
++            model_name='workersteam',
++            old_name='title',
++            new_name='titleW',
++        ),
++        migrations.AlterField(
++            model_name='project',
++            name='main',
++            field=models.TextField(blank=True, max_length=600, verbose_name='Сутність та стислий опис'),
++        ),
++    ]
+Index: logic/migrations/0009_auto_20210518_0904.py
+===================================================================
+--- logic/migrations/0009_auto_20210518_0904.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0009_auto_20210518_0904.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,23 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-18 06:04
+-
+-from django.db import migrations, models
+-import django.db.models.deletion
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('logic', '0008_auto_20210518_0824'),
+-    ]
+-
+-    operations = [
+-        migrations.RemoveField(
+-            model_name='project',
+-            name='projectTeams',
+-        ),
+-        migrations.AddField(
+-            model_name='project',
+-            name='projectTeams',
+-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='logic.workersteam', verbose_name="Пов'язана проєктна команда"),
+-        ),
+-    ]
+Index: logic/migrations/0005_auto_20210514_1353.py
+===================================================================
+--- logic/migrations/0005_auto_20210514_1353.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0009_auto_20210716_0906.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -1,4 +1,4 @@
+-# Generated by Django 3.1.5 on 2021-05-14 10:53
++# Generated by Django 3.1.5 on 2021-07-16 06:06
+ 
+ from django.conf import settings
+ from django.db import migrations, models
+@@ -9,13 +9,13 @@
+ 
+     dependencies = [
+         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+-        ('logic', '0004_auto_20210514_1302'),
++        ('logic', '0008_auto_20210716_0242'),
+     ]
+ 
+     operations = [
+         migrations.AlterField(
+-            model_name='action',
++            model_name='project',
+             name='rel_manager',
+-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
++            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL, verbose_name="Пов'язаний менеджер"),
+         ),
+     ]
+Index: logic/migrations/0010_remove_service_main.py
+===================================================================
+--- logic/migrations/0010_remove_service_main.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0010_remove_service_main.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,17 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-20 18:00
+-
+-from django.db import migrations
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('logic', '0009_auto_20210518_0904'),
+-    ]
+-
+-    operations = [
+-        migrations.RemoveField(
+-            model_name='service',
+-            name='main',
+-        ),
+-    ]
+Index: logic/migrations/0011_auto_20210520_2235.py
+===================================================================
+--- logic/migrations/0011_auto_20210520_2235.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0011_auto_20210520_2235.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,38 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-20 19:35
+-
+-from django.db import migrations, models
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('logic', '0010_remove_service_main'),
+-    ]
+-
+-    operations = [
+-        migrations.AlterField(
+-            model_name='action',
+-            name='full',
+-            field=models.TextField(blank=True, null=True, verbose_name='Опис'),
+-        ),
+-        migrations.AlterField(
+-            model_name='action',
+-            name='main',
+-            field=models.TextField(blank=True, max_length=250, verbose_name='Тема'),
+-        ),
+-        migrations.AlterField(
+-            model_name='event',
+-            name='main',
+-            field=models.TextField(blank=True, max_length=600, verbose_name='Короткий текст'),
+-        ),
+-        migrations.AlterField(
+-            model_name='service',
+-            name='target',
+-            field=models.TextField(blank=True, max_length=600, verbose_name='Цільова аудиторія'),
+-        ),
+-        migrations.AlterField(
+-            model_name='service',
+-            name='terms',
+-            field=models.TextField(blank=True, max_length=250, verbose_name='Умови надання'),
+-        ),
+-    ]
+Index: logic/migrations/0012_project_projecttype.py
+===================================================================
+--- logic/migrations/0012_project_projecttype.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0012_project_projecttype.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,18 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-25 19:05
+-
+-from django.db import migrations, models
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('logic', '0011_auto_20210520_2235'),
+-    ]
+-
+-    operations = [
+-        migrations.AddField(
+-            model_name='project',
+-            name='projectType',
+-            field=models.CharField(choices=[('teh', 'Технологічні'), ('ser', 'Сервісні')], default='teh', max_length=3, verbose_name='Тип проєкту'),
+-        ),
+-    ]
+Index: logic/migrations/0013_auto_20210525_2226.py
+===================================================================
+--- logic/migrations/0013_auto_20210525_2226.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/migrations/0013_auto_20210525_2226.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
+@@ -1,25 +0,0 @@
+-# Generated by Django 3.1.5 on 2021-05-25 19:26
+-
+-from django.db import migrations
+-import taggit.managers
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('taggit', '0003_taggeditem_add_unique_index'),
+-        ('logic', '0012_project_projecttype'),
+-    ]
+-
+-    operations = [
+-        migrations.AddField(
+-            model_name='recipientservices',
+-            name='partnerTags',
+-            field=taggit.managers.TaggableManager(help_text='A comma-separated list of tags.', through='taggit.TaggedItem', to='taggit.Tag', verbose_name='Список зацікавивших тегів'),
+-        ),
+-        migrations.AddField(
+-            model_name='service',
+-            name='partnerTags',
+-            field=taggit.managers.TaggableManager(help_text='A comma-separated list of tags.', through='taggit.TaggedItem', to='taggit.Tag', verbose_name='Список тегів сервісу'),
+-        ),
+-    ]
+Index: logic/models.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/models.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/models.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -2,9 +2,10 @@
+ from ckeditor.fields import RichTextField
+ from phonenumber_field.modelfields import PhoneNumberField
+ from django.conf import settings
+-from django.db.models.signals import post_save, pre_delete, post_delete
++from django.db.models.signals import post_save, pre_delete, post_delete, pre_init, post_init
+ from django.dispatch import receiver
+ from taggit.managers import TaggableManager
++from django.utils.crypto import get_random_string
+ 
+ ALL = 'all'
+ ECOLOGY = 'eco'
+@@ -56,21 +57,29 @@
+     email = models.EmailField("Електронна пошта ", unique=True)
+     phone = PhoneNumberField("Телефон", blank=False, unique=True)
+     phone2 = PhoneNumberField("Телефон доп.", null=True, blank=True, unique=True)
+-    GoogleDisk = models.URLField("Посилання на гугл диск", blank=False, default="#")
+-    Telegram = models.CharField("Telegram", max_length=30, blank=True, )
+-    info = RichTextField("Інф.", blank=True, max_length=600)
++    GoogleDisk = models.URLField("Посилання на гугл диск", blank=True)
++    Telegram = models.CharField("Telegram", max_length=30, blank=True)
++    info = models.TextField("Інф.", blank=True, max_length=600)
+     adress = models.CharField("Адреса", max_length=70, blank=True)
+     notion = models.CharField("Notion", blank=True, max_length=30)
+-    linkedIn = models.URLField("Посилання на linkedIn", blank=True, default="#")
+-    personal_page = models.URLField("Посилання на персональну сторінку", blank=True, default="#")
++    linkedIn = models.URLField("Посилання на linkedIn", blank=True)
++    personal_page = models.URLField("Посилання на персональну сторінку", blank=True)
+     skype = models.CharField("Skype", blank=True, max_length=30)
+-    fb = models.URLField("Посилання на Facebook", blank=True, default="#")
++    fb = models.URLField("Посилання на Facebook", blank=True)
+     isWorker = models.BooleanField("Розробник?", default=False)
+     isPartner = models.BooleanField("Партнер?", default=False)
+     isSeviceGiver = models.BooleanField("Надавач сервісів?", default=False)
+     isSeviceTaker = models.BooleanField("Користувач сервісів?", default=False)
+     isInvestor = models.BooleanField("Інвестор?", default=False)
+     isStudent = models.BooleanField("Студент?", default=False)
++    indef = models.CharField(
++        max_length=10,
++        blank=False,
++        editable=False,
++    )
++    valid = models.BooleanField(
++        default=False,
++    )
+ 
+     def __str__(self):
+         return self.name
+@@ -86,40 +95,46 @@
+ 
+ 
+ class WorkersTeam(models.Model):
+-    title = models.CharField("Назва команди", max_length=60)
++    titleW = models.CharField("Назва команди", max_length=60)
+     rel_partner = models.ForeignKey(Partner, on_delete=models.PROTECT, null=True, blank=True,
+                                     verbose_name="Відповідальна за команду особа")
+     workers = models.ManyToManyField(WorkerProfile, verbose_name="Пов'язані розробники")
+ 
+     def __str__(self):
+-        return self.title
++        return self.titleW
+ 
+ 
+ class Project(models.Model):
+-    TEH = 'teh'
+-    SER = 'ser'
++    REC = 'rec'
++    TTL = 'ttl'
++    PRO = 'pro'
++    TIA = 'tia'
+     TYP = [
+-        (TEH, 'Технологічні'),
+-        (SER, 'Сервісні'),
++        (REC, 'Дослідження та експериментальне підтвердження'),
++        (TTL, 'Технологія, перевірена в лабораторії'),
++        (PRO, 'Наявний прототип'),
++        (TIA, 'Технологія має промислові застосування'),
+     ]
+-    title = models.CharField("Назва проєкту", max_length=60)
+-    main = RichTextField("Короткий опис проєкту", blank=True, max_length=600)
+-    category = models.CharField("Тематика",
++    title = models.CharField("Коротка назва розробки", max_length=60)
++    main = models.TextField("Сутність та стислий опис", blank=True, max_length=600)
++    category = models.CharField("Галузь",
+                                 max_length=3,
+                                 choices=Category,
+                                 default=ALL,
+                                 )
+-    projectType = models.CharField("Тип проєкту",
+-                                   max_length=3,
+-                                   choices=TYP,
+-                                   default=TEH,
+-                                   )
++    projectStage = models.CharField("Ступінь готовності розробки",
++                                    max_length=3,
++                                    choices=TYP,
++                                    default=REC,
++                                    )
+     projectTeams = models.OneToOneField(WorkersTeam, on_delete=models.PROTECT, null=True, blank=True,
+                                         verbose_name="Пов'язана проєктна команда")
+-
++    rel_manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, blank=True, null=True,
++                                    verbose_name="Пов'язаний менеджер")
++    firstvalid = models.BooleanField("Перша валідіфікація", default=False)
+ 
+-def __str__(self):
+-    return self.title
++    def __str__(self):
++        return self.title
+ 
+ 
+ class Action(models.Model):
+@@ -173,6 +188,12 @@
+         return self.title
+ 
+ 
++@receiver(post_init, sender=Partner)
++def indef_giver(sender, instance, **kwargs):
++    if not instance.indef:
++        instance.indef = get_random_string(10)
++
++
+ @receiver(post_save, sender=Partner)
+ def create_partner_profile(sender, instance, created, **kwargs):
+     if instance.isWorker:
+Index: logic/static/css/Crm.css
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/static/css/Crm.css	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/static/css/Crm.css	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -2,6 +2,12 @@
+     background-color: #9678AD;
+ }
+ 
++footer {
++    background-color: #29123B;
++    color: white;
++    flex: 0 0 auto;
++}
++
+ a {
+     color: white;
+ }
+@@ -28,6 +34,15 @@
+ 
+ }
+ 
++.main-img {
++    height: 5rem;
++}
++
++.home-img {
++    width: 100%;
++    height: auto;
++}
++
+ .dropdown-item:active {
+     border: none;
+     background-color: #443950;
+@@ -64,6 +79,15 @@
+     background-color: #29123B;
+     border-color: #29123B;
+ }
++
++
++.btn-primary:hover {
++    background-color: #29123B;
++    color: white;
++    border-color: #29123B;
++    box-shadow: 0px 0px 0px 4px #9678AD;
++
++}
+ 
+ .Name_table {
+     color: #29123B;
+@@ -77,6 +101,93 @@
+ 
+ }
+ 
++.dropdown-item {
++    font-size: 1.2rem;
++}
++
++.dropdown-toggle {
++    font-size: 1.2rem;
++}
++
++.navbar-brand {
++    font-size: 2.5rem;
++}
++
+ .dropdown-hover-all .dropdown-menu, .dropdown-hover > .dropdown-menu.dropend {
+     margin-left: -1px !important
+ }
++
++.container-home {
++    background-color: #ffffff;
++    padding: 1rem;
++    border: 0.5rem double #29123B;
++    border-radius: 25px;
++    color: #29123B;
++    text-align: center;
++    font-size: 1rem;
++}
++
++.container-xxl {
++    padding-top: 2rem;
++}
++
++.container-login {
++    margin-top: 125px;
++}
++
++.img-container {
++    padding-left: 4rem;
++    padding-right: 4rem;
++    padding-top: 1rem;
++}
++
++.content {
++    min-height: calc(100vh - 178px);
++}
++
++@media (min-width: 1520px) {
++    .container, .container-lg, .container-md, .container-sm, .container-xl, .container-xxl {
++        max-width: 1500px;
++    }
++}
++
++@media (min-width: 1820px) {
++    .container, .container-lg, .container-md, .container-sm, .container-xl, .container-xxl {
++        max-width: 1800px;
++    }
++}
++
++.form-signin {
++    width: 100%;
++    max-width: 330px;
++    padding: 15px;
++    margin: auto;
++}
++
++.form-signin .form-control {
++    position: relative;
++    box-sizing: border-box;
++    height: auto;
++    padding: 10px;
++    font-size: 16px;
++}
++
++.form-signin .form-control:focus {
++    z-index: 2;
++}
++
++.form-signin input[type="email"] {
++    margin-bottom: -1px;
++    border-bottom-right-radius: 0;
++    border-bottom-left-radius: 0;
++}
++
++.form-signin input[type="password"] {
++    margin-bottom: 10px;
++    border-top-left-radius: 0;
++    border-top-right-radius: 0;
++}
++
++.h3 {
++    text-align: center;
++}
+\ No newline at end of file
+Index: logic/urls.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/urls.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/urls.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -3,14 +3,21 @@
+ 
+ urlpatterns = [
+     path('', views.home, name='home'),
++    path('partner_register', views.partner_register, name='partner_register'),
++    path('partner_register/<str:indef>/cont', views.partner_register_cont, name='partner_register_cont'),
++    path('partner_register/<str:indef>/last', views.partner_register_last, name='partner_register_last'),
+     path('events/<str:cat>', views.events_by_category, name='events_list_by_category'),
+     path('participants/', views.partner_list, name='partner_list'),
+     path('workers/', views.workers_list, name='workers_list'),
+     path('recipient_of_services/', views.recipientservices_list, name='servisetaker_list'),
+     path('service_providers/', views.serviceprovider_list, name='servisegiver_list'),
+-    path('participants/detailed/<str:name>', views.partner_detailed, name='partner_detailed'),
+-    path('participants/detailed/<str:name>/add_action', views.action_profile_add, name='action_profile_new'),
++    path('participants/detailed/<str:indef>', views.partner_detailed, name='partner_detailed'),
++    path('participants/detailed/<str:indef>/add_action', views.action_profile_add, name='action_profile_new'),
+     path('services/', views.service_list, name='service_list'),
+     path('services/detailed/<str:title>', views.service_detailed, name='service_detailed'),
+-    path('project/<str:cat>', views.projects_list_by_category, name='projects_list_by_category'),
++    path('development/', views.development_list, name='development_list'),
++    path('development/take_by_me+<int:pk>', views.development_take, name='development_take'),
++    path('my_projects/', views.my_projects, name='my_projects'),
++    path('my_projects/detailed/<int:pk>', views.project_detailed, name='project_detailed'),
++
+ ]
+Index: logic/views.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- logic/views.py	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ logic/views.py	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -4,7 +4,7 @@
+     RecipientServices
+ from django.shortcuts import redirect
+ from taggit.models import Tag
+-from .forms import ActionForm
++from .forms import *
+ 
+ 
+ def home(request):
+@@ -47,7 +47,7 @@
+     return render(request, 'logic/partners.html', context)
+ 
+ 
+-def partner_detailed(request, name):
++def partner_detailed(request, indef):
+     worker = None
+     workersTeams = None
+     recipient_of_services = None
+@@ -55,7 +55,7 @@
+     gived_sevices = None
+     serviceprovider = None
+ 
+-    partner = get_object_or_404(Partner, name=name)
++    partner = get_object_or_404(Partner, indef=indef)
+     actions = partner.action_set.all().order_by('-date')
+ 
+     if partner.isWorker:
+@@ -81,8 +81,9 @@
+     return render(request, 'logic/partners_detailed.html', context)
+ 
+ 
+-def action_profile_add(request, name):
+-    partner = get_object_or_404(Partner, name=name)
++def action_profile_add(request, indef):
++    partner = get_object_or_404(Partner, indef=indef)
++    form = ActionForm
+     if request.method == "POST":
+         form = ActionForm(request.POST)
+         if form.is_valid():
+@@ -90,10 +91,8 @@
+             action.partner = partner
+             action.rel_manager = request.user
+             action.save()
+-            return redirect('partner_detailed', name=partner.name)
++            return redirect('partner_detailed', indef=partner.indef)
+ 
+-    else:
+-        form = ActionForm
+     context = {"partner": partner,
+                "form": form,
+                }
+@@ -114,7 +113,115 @@
+     return render(request, 'logic/service_detailed.html', context)
+ 
+ 
+-def projects_list_by_category(request, cat):
+-    project = Project.objects.filter(category=cat)
+-    context = {"project": project}
+-    return render(request, 'logic/projects_list.html', context)
+\ No newline at end of file
++def development_list(request):
++    projects = Project.objects.filter(rel_manager=None)
++    context = {"projects": projects}
++    return render(request, 'logic/projects_list.html', context)
++
++
++def partner_register(request):
++    context = {}
++
++    form = PartnerForm()
++
++    if request.POST:
++        form = PartnerForm(request.POST)
++        if form.is_valid():
++            partner = form.save(commit=False)
++            partner.save()
++            return redirect('partner_register_cont', indef=partner.indef)
++
++    context['form'] = form
++    return render(request, 'logic/partner_register.html', context)
++
++
++def partner_register_cont(request, indef):
++    form = PartnerFormSecond()
++
++    partner = get_object_or_404(Partner, indef=indef)
++
++    if request.POST:
++        form = PartnerFormSecond(request.POST)
++        if form.is_valid():
++            partner.isWorker = form.instance.isWorker
++            partner.isSeviceGiver = form.instance.isSeviceGiver
++            partner.isStudent = form.instance.isStudent
++            partner.isInvestor = form.instance.isWorker
++            partner.save()
++            return redirect('partner_register_last', indef=partner.indef)
++
++    context = {'partner': partner, 'form': form}
++    return render(request, 'logic/partner_register_cont.html', context)
++
++
++def partner_register_last(request, indef):
++    partner = get_object_or_404(Partner, indef=indef)
++
++    workerform = WorkerProfileReg
++    teamform = WorkersTeamReg
++    projectform = ProjectReg
++    errorList = {}
++
++    if request.POST:
++        workerform = WorkerProfileReg(request.POST)
++        teamform = WorkersTeamReg(request.POST)
++        projectform = ProjectReg(request.POST)
++
++        if workerform.is_valid() and teamform.is_valid() and projectform.is_valid():
++            workprof = WorkerProfile.objects.get(partner=partner)
++            workprof.org = request.POST['org']
++            workprof.position = request.POST['position']
++            team = teamform.save(commit=False)
++            team.titleW = request.POST['titleW']
++            team.save()
++            team.rel_partner = partner
++            team.workers.add(partner.workerprofile)
++            workersStr = request.POST['workers']
++            workersEmailsList = workersStr.split()
++            for workerEmail in workersEmailsList:
++                try:
++                    partner = get_object_or_404(Partner, email=workerEmail)
++                    if partner.isWorker:
++                        worker = partner.workerprofile
++                        team.workers.add(worker)
++                    else:
++                        partner.isWorker = True
++                        worker = partner.workerprofile
++                        team.workers.add(worker)
++                except:
++                    error = "Немає користувача з таким email:" + workerEmail
++                    context = {'partner': partner, 'workerform': workerform, 'teamform': teamform,
++                               'projectform': projectform, 'error': error}
++                    return render(request, 'logic/partner_register_last.html', context)
++            project = projectform.save(commit=False)
++            project.projectTeams = team
++            workprof.save()
++            team.save()
++            project.save()
++            return redirect('home')
++
++    context = {'partner': partner, 'workerform': workerform, 'teamform': teamform, 'projectform': projectform}
++    return render(request, 'logic/partner_register_last.html', context)
++
++
++def development_take(request, pk):
++    project = get_object_or_404(Project, pk=pk)
++    project.rel_manager = request.user
++    project.save()
++    return redirect('project_detailed', pk=pk)
++
++
++def my_projects(request):
++    projects = Project.objects.filter(rel_manager=request.user)
++
++    context = {'projects': projects}
++
++    return render(request, 'logic/my_projects_list.html', context)
++
++
++def project_detailed(request, pk):
++    project = get_object_or_404(Project, pk=pk)
++    workers = WorkerProfile.objects.filter(workersteam=project.projectTeams)
++    context = {'project': project,
++               'workers': workers, }
++    return render(request, 'logic/my_project_detailed.html', context)
+Index: templates/logic/action_profile_add.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/action_profile_add.html	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ templates/logic/action_profile_add.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -1,12 +1,6 @@
+ {% extends 'logic/base.html' %}
+ {% block content %}
+     <div class="container main-container">
+-        <a class="btn btn-primary float-right" href="{% url 'action_profile_new' name=partner.name %}">
+-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+-                 class="bi bi-plus-lg" viewBox="0 0 16 16">
+-                <path d="M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z"/>
+-            </svg>
+-        </a>
+         <div class="card">
+             <div class="card-header">
+                 Нова Дія
+Index: templates/logic/base.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/base.html	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ templates/logic/base.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -10,101 +10,124 @@
+     <link rel="stylesheet" href="{% static 'css/Crm.css' %}">
+     <title>Hello, world!</title>
+ </head>
+-<body>
+ <nav class="navbar navbar-expand-lg sticky-top bg-top">
+     <div class="container-fluid">
+-        <a class="navbar-brand" href="{% url 'home' %}">Проєкт СРМ</a>
+-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarScroll"
+-                aria-controls="navbarScroll" aria-expanded="false" aria-label="Toggle navigation">
+-            <span class="navbar-toggler-icon"></span>
+-        </button>
+-        <div class="collapse navbar-collapse" id="navbarScroll">
+-            <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
+-                <li class="nav-item dropdown">
+-                    <div class="dropdown">
+-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="navbarDropdown"
+-                                data-bs-toggle="dropdown" aria-expanded="false">
+-                            Проєкти
+-                        </button>
+-                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+-                            <a class="dropdown-item" href="{% url 'projects_list_by_category' cat='teh'%}">Технологічні</a>
+-                            <a class="dropdown-item" href="{% url 'projects_list_by_category' cat='ser'%}">Сервісні</a>
+-                        </div>
+-                    </div>
+-                </li>
+-                <li class="nav-item dropdown">
+-                    <div class="dropdown">
+-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="navbarDropdown"
+-                                data-bs-toggle="dropdown" aria-expanded="false">
+-                            Учасники
+-                        </button>
+-                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+-                            <a class="dropdown-item" href="{% url 'partner_list' %}">Контакти</a>
+-                            <div class="dropdown-divider"></div>
+-                            <div class="dropdown dropend">
+-                                <a class="dropdown-item dropdown-toggle" href="#"
+-                                   id="dropdown-layouts"
+-                                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Внутрішні</a>
+-                                <div class="dropdown-menu" aria-labelledby="dropdown-layouts">
+-                                    <a class="dropdown-item" href="#">Студенти</a>
+-                                    <a class="dropdown-item" href="{% url 'workers_list' %}">Розробники</a>
+-                                    <a class="dropdown-item" href="{% url 'servisetaker_list' %}">Одержувачі сервісів</a>
+-                                </div>
+-                                <a class="dropdown-item dropdown-toggle" href="#"
+-                                   id="dropdown-layouts"
+-                                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Зовнішні</a>
+-                                <div class="dropdown-menu" aria-labelledby="dropdown-layouts">
+-                                    <a class="dropdown-item" href="#">Інвестор</a>
+-                                    <a class="dropdown-item" href="{% url 'servisegiver_list' %}">Надавач сервісів</a>
+-                                    <a class="dropdown-item" href="#">Партнери</a>
+-                                </div>
+-                            </div>
+-                        </div>
+-                    </div>
+-                </li>
+-                <li class="nav-item dropdown">
+-                    <div class="dropdown">
+-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="navbarDropdown"
+-                                data-bs-toggle="dropdown" aria-expanded="false">
+-                            Сервіси
+-                        </button>
+-                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+-                            <a class="dropdown-item" href="{% url 'service_list' %}">Усі сервіси</a>
+-                            <div class="dropdown-divider"></div>
+-                            <a class="dropdown-item" href="#">Сервіс 2</a>
+-                            <a class="dropdown-item" href="#">Сервіс 3</a>
+-                        </div>
+-                    </div>
+-                </li>
+-                <li class="nav-item dropdown">
+-                    <div class="dropdown">
+-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="navbarDropdown"
+-                                data-bs-toggle="dropdown" aria-expanded="false">
+-                            Ивенты
+-                        </button>
+-                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+-                            <a class="dropdown-item" href="{% url 'events_list_by_category' cat='all'%}">Усі Івенти</a>
+-                            <div class="dropdown-divider"></div>
+-                            <a class="dropdown-item" href="{% url 'events_list_by_category' cat='eco' %}">Екологія</a>
+-                            <a class="dropdown-item" href="{% url 'events_list_by_category' cat='enr' %}">Енергія</a>
+-                            <a class="dropdown-item"
+-                               href="{% url 'events_list_by_category' cat='bio' %}">Біотехнології</a>
+-                            <a class="dropdown-item" href="{% url 'events_list_by_category' cat='mat' %}">Матеріалознавство</a>
+-                        </div>
+-                    </div>
+-                </li>
+-            </ul>
++        <a class="navbar-brand" href="{% url 'home' %}">
++            <img class="main-img"
++                 src="https://cdn.discordapp.com/attachments/668144999589740584/864162397694591036/1626102756050.png"
++                 alt="Вернуться на главную страницу">
++            Проєкт СРМ
++        </a>
++        {% if user.is_authenticated %}
++            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarScroll"
++                    aria-controls="navbarScroll" aria-expanded="false" aria-label="Toggle navigation">
++                <span class="navbar-toggler-icon"></span>
++            </button>
++            <div class="collapse navbar-collapse" id="navbarScroll">
++                <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
++                    <li class="nav-item dropdown">
++                        <div class="dropdown">
++                            <button class="btn btn-secondary dropdown-toggle" type="button" id="navbarDropdown"
++                                    data-bs-toggle="dropdown" aria-expanded="false">
++                                Інновації
++                            </button>
++                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
++                                <a class="dropdown-item" href="{% url 'development_list'%}">Розробки</a>
++                                <a class="dropdown-item"
++                                   href="{% url 'my_projects'%}">Мои проект</a>
++                            </div>
++                        </div>
++                    </li>
++                    <li class="nav-item dropdown">
++                        <div class="dropdown">
++                            <button class="btn btn-secondary dropdown-toggle" type="button" id="navbarDropdown"
++                                    data-bs-toggle="dropdown" aria-expanded="false">
++                                Учасники
++                            </button>
++                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
++                                <a class="dropdown-item" href="{% url 'partner_list' %}">Контакти</a>
++                                <div class="dropdown-divider"></div>
++                                <div class="dropdown dropend">
++                                    <a class="dropdown-item dropdown-toggle" href="#"
++                                       id="dropdown-layouts"
++                                       data-bs-toggle="dropdown" aria-haspopup="true"
++                                       aria-expanded="false">Внутрішні</a>
++                                    <div class="dropdown-menu" aria-labelledby="dropdown-layouts">
++                                        <a class="dropdown-item" href="#">Студенти</a>
++                                        <a class="dropdown-item" href="{% url 'workers_list' %}">Розробники</a>
++                                        <a class="dropdown-item" href="{% url 'servisetaker_list' %}">Одержувачі
++                                            сервісів</a>
++                                    </div>
++                                    <a class="dropdown-item dropdown-toggle" href="#"
++                                       id="dropdown-layouts"
++                                       data-bs-toggle="dropdown" aria-haspopup="true"
++                                       aria-expanded="false">Зовнішні</a>
++                                    <div class="dropdown-menu" aria-labelledby="dropdown-layouts">
++                                        <a class="dropdown-item" href="#">Інвестор</a>
++                                        <a class="dropdown-item" href="{% url 'servisegiver_list' %}">Надавач
++                                            сервісів</a>
++                                        <a class="dropdown-item" href="#">Партнери</a>
++                                    </div>
++                                </div>
++                            </div>
++                        </div>
++                    </li>
++                    <li class="nav-item dropdown">
++                        <div class="dropdown">
++                            <button class="btn btn-secondary dropdown-toggle" type="button" id="navbarDropdown"
++                                    data-bs-toggle="dropdown" aria-expanded="false">
++                                Сервіси
++                            </button>
++                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
++                                <a class="dropdown-item" href="{% url 'service_list' %}">Усі сервіси</a>
++                                <div class="dropdown-divider"></div>
++                                <a class="dropdown-item" href="#">Сервіс 2</a>
++                                <a class="dropdown-item" href="#">Сервіс 3</a>
++                            </div>
++                        </div>
++                    </li>
++                    <li class="nav-item dropdown">
++                        <div class="dropdown">
++                            <button class="btn btn-secondary dropdown-toggle" type="button" id="navbarDropdown"
++                                    data-bs-toggle="dropdown" aria-expanded="false">
++                                Ивенты
++                            </button>
++                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
++                                <a class="dropdown-item" href="{% url 'events_list_by_category' cat='all' %}">Усі
++                                    Івенти</a>
++                                <div class="dropdown-divider"></div>
++                                <a class="dropdown-item"
++                                   href="{% url 'events_list_by_category' cat='eco' %}">Екологія</a>
++                                <a class="dropdown-item"
++                                   href="{% url 'events_list_by_category' cat='enr' %}">Енергія</a>
++                                <a class="dropdown-item"
++                                   href="{% url 'events_list_by_category' cat='bio' %}">Біотехнології</a>
++                                <a class="dropdown-item" href="{% url 'events_list_by_category' cat='mat' %}">Матеріалознавство</a>
++                            </div>
++                        </div>
++                    </li>
++                </ul>
+ 
+-        </div>
++            </div>
++        {% endif %}
+     </div>
+ </nav>
+-{% block content %}
+-{% endblock %}
++<div class="content">
++    {% block content %}
++    {% endblock %}
++</div>
++<footer class="text-center text-lg-start">
++    <div class="text-center p-4">
++        Copyright © КАУ 2021 Все права защищены
++    </div>
++</footer>
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+         integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+         crossorigin="anonymous"></script>
+ <script src="{% static 'script/bootstrap5-dropdown-ml-hack.js' %}"></script>
+ <script src="{% static 'script/sorttable.js' %}"></script>
+-<script> sorttable.sort_alpha = function (a, b) {return a [0] .localeCompare (b [0]); } </script>
++<script> sorttable.sort_alpha = function (a, b) {
++    return a [0].localeCompare(b [0]);
++} </script>
+ </body>
+ </html>
+\ No newline at end of file
+Index: templates/logic/home.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/home.html	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ templates/logic/home.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -1,10 +1,64 @@
+ {% extends 'logic/base.html' %}
+ {% block content %}
+-    <div class="container main-container">
+-        <figure class="text-center">
+-            <p>A well-known quote, contained in a blockquote element.</p>
+-            Someone famous in <cite title="Source Title">Source Title</cite>
+-            </figcaption>
+-        </figure>
++    <div class="container-xxl">
++        <div class="row">
++            <div class="col">
++                <div class="container-fluid container-home">
++                    <h1> Ви розробник? </h1>
++                    <a href="{% url 'partner_register' %}"
++                       class="btn btn-primary">Зареєструвати свою розробку</a>
++                </div>
++            </div>
++            <div class="col-6">
++                <div class="container-fluid container-home">
++                    <p>Лишь реплицированные с зарубежных источников, современные исследования лишь добавляют фракционных
++                        разногласий и рассмотрены исключительно в разрезе маркетинговых и финансовых предпосылок. Прежде
++                        всего, социально-экономическое развитие позволяет оценить значение анализа существующих
++                        паттернов
++                        поведения. Являясь всего лишь частью общей картины, предприниматели в сети интернет могут быть
++                        преданы социально-демократической анафеме. И нет сомнений, что базовые сценарии поведения
++                        пользователей являются только методом политического участия и рассмотрены исключительно в
++                        разрезе
++                        маркетинговых и финансовых предпосылок.</p>
++
++                    <p>А ещё базовые сценарии поведения пользователей неоднозначны и будут указаны как претенденты на
++                        роль
++                        ключевых факторов. Являясь всего лишь частью общей картины, многие известные личности формируют
++                        глобальную экономическую сеть и при этом - рассмотрены исключительно в разрезе маркетинговых и
++                        финансовых предпосылок. Внезапно, явные признаки победы институционализации могут быть
++                        объединены в
++                        целые кластеры себе подобных. В своём стремлении повысить качество жизни, они забывают, что
++                        высококачественный прототип будущего проекта предоставляет широкие возможности для новых
++                        предложений. Высокий уровень вовлечения представителей целевой аудитории является четким
++                        доказательством простого факта: постоянное информационно-пропагандистское обеспечение нашей
++                        деятельности способствует повышению качества распределения внутренних резервов и ресурсов.</p>
++                </div>
++                <div class="img-container">
++                    <img class="home-img"
++                         src="https://media.discordapp.net/attachments/668144999589740584/864162397441753108/1626102745429.png"
++                         alt="Вернуться на главную страницу">
++                </div>
++
++            </div>
++            <div class="col">
++                <div class="container-fluid container-home">
++                    {% if user.is_authenticated %}
++                        <h1> Ласкаво просимо! </h1>
++                        <p> Ви увійшли як - {{ user.get_full_name }}!</p>
++                        <div class="container-fluid">
++                            <a href="#"
++                               class="btn btn-primary btn-sm">Перейти до свого профілю</a>
++                            <a href="{% url 'login_out' %}"
++                               class="btn btn-primary btn-sm">Вийти із аккаунта</a>
++                        </div>
++                    {% else %}
++                        <h1> Ви співробітник? </h1>
++                        <a href="{% url 'login_in' %}"
++                           class="btn btn-primary">Увійти як співробітник</a>
++
++                    {% endif %}
++                </div>
++            </div>
++        </div>
+     </div>
+ {% endblock %}
+\ No newline at end of file
+Index: templates/logic/my_project_detailed.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/my_project_detailed.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ templates/logic/my_project_detailed.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,48 @@
++{% extends 'logic/base.html' %}
++{% block content %}
++    <div class="container main-container">
++        <div class="card">
++            <div class="card-header">
++                Загальна
++            </div>
++            <div class="card-body">
++                <h5 class="card-title">Назва проекту : {{ project.title }} </h5>
++                <hr>
++                <div class="row">
++                    <div class="col">
++                        <div class="container">
++                            <h5 class="card-title">Проектна команда: {{ project.projectTeams.titleW }}</h5>
++                            <hr>
++                            <h6>Відповідальна
++                                особа: {{ project.projectTeams.rel_partner.name }} {{ project.projectTeams.rel_partner.surname }} </h6>
++                            {% for worker in workers %}
++                                <a href="{% url 'partner_detailed' indef=worker.partner.indef %}"
++                                   class="btn btn-primary">{{ worker.partner.name }}</a>
++                            {% endfor %}
++                            <hr>
++                        </div>
++                    </div>
++                    <div class="col">
++                        <div class="container">
++
++                            <h5 class="card-title">Мітки:</h5>
++                            <hr>
++                            <h6>Ступінь готовності розробки: {{ project.get_projectStage_display }}</h6> <br>
++                            <h6>Галузь: {{ project.get_category_display }}</h6>
++                            <hr>
++                        </div>
++                    </div>
++                </div>
++                <div class="container">
++                    <h5 class="card-title">Сутність та стислий опис:</h5>
++                    <hr>
++                    <p>{{ project.main }}</p>
++                    <hr>
++                </div>
++            </div>
++        </div>
++    </div>
++    </div>
++    </div>
++    </div>
++{% endblock %}
+\ No newline at end of file
+Index: templates/logic/my_projects_list.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/my_projects_list.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ templates/logic/my_projects_list.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,63 @@
++{% extends 'logic/base.html' %}
++{% block content %}
++    <div class="container main-container">
++        <ul class="nav nav-tabs" id="myTab" role="tablist">
++            <li class="nav-item" role="presentation">
++                <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button"
++                        role="tab" aria-controls="home" aria-selected="true">
++                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
++                         class="bi bi-table" viewBox="0 0 16 16">
++                        <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h3a1 1 0 0 0 1-1v-2zm-5 3v-3H6v3h4zm-5 0v-3H1v2a1 1 0 0 0 1 1h3zm-4-4h4V8H1v3zm0-4h4V4H1v3zm5-3v3h4V4H6zm4 4H6v3h4V8z"/>
++                    </svg>
++                </button>
++            </li>
++            <li class="nav-item" role="presentation">
++                <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button"
++                        role="tab" aria-controls="profile" aria-selected="false">
++                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
++                         class="bi bi-view-list" viewBox="0 0 16 16">
++                        <path d="M3 4.5h10a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1H3zM1 2a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 2zm0 12a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 14z"/>
++                    </svg>
++                </button>
++            </li>
++        </ul>
++        <div class="tab-content" id="myTabContent">
++            <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
++                <table class="table table-bordered table-hover sortable">
++                    <thead>
++                    <tr>
++                        <th scope="col">Коротка назва розробки</th>
++                        <th scope="col">Галузь</th>
++                        <th scope="col">Ступінь готовності розробки</th>
++                        <th scope="col">Сутність та стислий опис</th>
++                    </tr>
++                    </thead>
++                    <tbody>
++                    {% for project in projects %}
++                        <tr>
++                            <td><a href="{% url 'project_detailed' pk=project.pk %}" class="btn btn-primary">{{ project.title }}</a></td>
++                            <td>{{ project.get_category_display }}</td>
++                            <td>{{ project.get_projectStage_display }}</td>
++                            <td>{{ project.main }}</td>
++                        </tr>
++                    {% endfor %}
++                    </tbody>
++                </table>
++            </div>
++            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
++                {% for event in events %}
++                    <div class="card">
++                        <div class="card-header">
++                            {{ event.date }}
++                        </div>
++                        <div class="card-body">
++                            <h5 class="card-title">{{ event.title }}</h5>
++                            <p class="card-text">{{ event.main | safe }}</p>
++                            <a href="{% url 'events_detailed' slug=event.slug %}" class="btn btn-primary">Детальніше</a>
++                        </div>
++                    </div>
++                {% endfor %}
++            </div>
++        </div>
++    </div>
++{% endblock %}
+\ No newline at end of file
+Index: templates/logic/partner_register.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/partner_register.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ templates/logic/partner_register.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,64 @@
++{% extends 'logic/base.html' %}
++{% block content %}
++    <br>
++    <div class="container">
++        <div class="row">
++            <div class="col">
++            </div>
++            <div class="col-6">
++                <div class="container-fluid container-home">
++                    <form method="POST" class="post-form">{% csrf_token %}
++                        <div class="text-start">
++                            <h2 class="text-center">Реєстрація нового учасника системи</h2><br>
++                            <h5>Що б вас зареєструвати нам обов'язково потрібно, що б ви вказали про себе цю
++                                інформацію:</h5><br>
++                            {{ form.name }}<br>
++                            {{ form.surname }}<br>
++                            {{ form.email }}<br>
++                            {{ form.phone }}<br>
++                            <h5>Додаткова контакта інформація:</h5><br>
++                            {{ form.nameEn }}<br>
++                            {{ form.surnameEn }}<br>
++                            {{ form.phone2 }}<br>
++                            {{ form.adress }}<br>
++                            <h5>Соціальні мережі:</h5><br>
++                            {{ form.Telegram }}<br>
++                            {{ form.skype }}<br>
++                            {{ form.fb }}<br>
++                            {{ form.notion }}<br>
++                            {{ form.personal_page }}<br>
++                            <h5>Вам є що ще про себе розповісти?</h5><br>
++                            {{ form.info }}<br>
++                            <div class="form-check form-switch fs-5">
++                                {{ form.valid }}
++                                <label class="form-check-label" for="flexSwitchCheckDefault">Ви даєте право на обробку
++                                    ваших персональних даних?</label>
++                            </div>
++                            <br>
++                        </div>
++                        {% for field in form %}
++                            <p>
++                                {% for error in field.errors %}
++                                    <p style="color: red">{{ error }}</p>
++                                {% endfor %}
++                            </p>
++                        {% endfor %}
++                        {% if form.non_field_errors %}
++                            <div style="color: red">
++                                {% for error in form.non_field_errors %}
++                                    <p>{{ error }}</p>
++                                {% endfor %}
++                            </div>
++                        {% endif %}
++                        <br>
++                        <button class="btn btn-lg btn-primary btn-block" type="submit">Далі</button>
++
++                    </form>
++                </div>
++            </div>
++            <div class="col">
++            </div>
++        </div>
++    </div>
++    <br>
++{% endblock %}
+\ No newline at end of file
+Index: templates/logic/partner_register_cont.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/partner_register_cont.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ templates/logic/partner_register_cont.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,73 @@
++{% extends 'logic/base.html' %}
++{% block content %}
++    <br>
++    <div class="container">
++        <div class="row">
++            <div class="col">
++            </div>
++            <div class="col-6">
++                <div class="container-fluid container-home">
++                    <form method="POST" class="post-form">{% csrf_token %}
++                        <div class="text-start">
++                            <h2 class="text-center">Вітаємо! Перший етап реєстрації пройдено!</h2><br>
++                            <h5>Ось ваш унікальний індефекатор в системі -
++                                <mark>{{ partner.indef }}</mark>
++                                .
++                                За його допомогою ви зможете в майбутньому додавати свої розробки і сервіси.
++                            </h5>
++                            <h5>Ідефекатор це ваш ключ в систему, збережіть його.
++                            </h5>
++                            <br>
++                            <h5>Додаткова інформація:</h5><br>
++                            <div class="form-check form-switch fs-5">
++                                {{ form.isWorker }}
++                                <label class="form-check-label" for="flexSwitchCheckDefault">Відзначте це, якщо ви
++                                    розробник, і збираєтеся внести систему інформацію про свою розробку.</label>
++                            </div>
++                            <br>
++                            <div class="form-check form-switch fs-5">
++                                {{ form.isSeviceGiver }}
++                                <label class="form-check-label" for="flexSwitchCheckDefault">Відзначте це, якщо ви
++                                    надавач
++                                    сервісів і збираєтеся внести інформацію про свій сервіс.</label>
++                            </div>
++                            <br>
++                            <div class="form-check form-switch fs-5">
++                                {{ form.isInvestor }}
++                                <label class="form-check-label" for="flexSwitchCheckDefault">Відзначте це, якщо ви
++                                    інвестор і зацікавлені у розробках в нашій системі.</label>
++                            </div>
++                            <br>
++                            <div class="form-check form-switch fs-5">
++                                {{ form.isStudent }}
++                                <label class="form-check-label" for="flexSwitchCheckDefault">Відзначте це, якщо ви
++                                    студент.</label>
++                            </div>
++                            <br>
++                        </div>
++                        {% for field in form %}
++                            <p>
++                                {% for error in field.errors %}
++                                    <p style="color: red">{{ error }}</p>
++                                {% endfor %}
++                            </p>
++                        {% endfor %}
++                        {% if form.non_field_errors %}
++                            <div style="color: red">
++                                {% for error in form.non_field_errors %}
++                                    <p>{{ error }}</p>
++                                {% endfor %}
++                            </div>
++                        {% endif %}
++                        <br>
++                        <button class="btn btn-lg btn-primary btn-block" type="submit">Далі...</button>
++
++                    </form>
++                </div>
++            </div>
++            <div class="col">
++            </div>
++        </div>
++    </div>
++    <br>
++{% endblock %}
+\ No newline at end of file
+Index: templates/logic/partner_register_last.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/partner_register_last.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ templates/logic/partner_register_last.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,57 @@
++{% extends 'logic/base.html' %}
++{% block content %}
++    <br>
++    <div class="container">
++        <div class="row">
++            <div class="col">
++            </div>
++            <div class="col-6">
++                <div class="container-fluid container-home">
++                    <form method="POST" class="post-form">{% csrf_token %}
++                        <div class="text-start">
++                            <h2 class="text-center">Останній крок реєстрації в системі</h2><br>
++                            <h5>Так як ви розробник, вкажіть додаткову інформацію про вас</h5><br>
++                            {{ workerform.org }}<br>
++                            {{ workerform.position }}<br>
++                            <h5>Ваша проектна команда:</h5><br>
++                            {{ teamform.titleW }}<br>
++                            <input type="text" name="workers" class="form-control"
++                                   placeholder="Введіть email членів вашої команди через пробіл" required=""
++                                   id="id_workers"><br>
++                            <h5>Ваша розробка:</h5><br>
++                            {{ projectform.title }}<br>
++                            {{ projectform.main }}<br>
++                            {{ projectform.category }}<br>
++                            {{ projectform.projectStage }}<br>
++                        </div>
++                        {% for field in form %}
++                            <p>
++                                {% for error in field.errors %}
++                                    <p style="color: red">{{ error }}</p>
++                                {% endfor %}
++                            </p>
++                        {% endfor %}
++                        {% if form.non_field_errors %}
++                            <div style="color: red">
++                                {% for error in form.non_field_errors %}
++                                    <p>{{ error }}</p>
++                                {% endfor %}
++                            </div>
++                        {% endif %}
++                        {% if error %}
++                            <div style="color: red">
++                                <p>{{ error }}</p>
++                            </div>
++                        {% endif %}
++                        <br>
++                        <button class="btn btn-lg btn-primary btn-block" type="submit">Зареєструватися!</button>
++
++                    </form>
++                </div>
++            </div>
++            <div class="col">
++            </div>
++        </div>
++    </div>
++    <br>
++{% endblock %}
+\ No newline at end of file
+Index: templates/logic/partners.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/partners.html	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ templates/logic/partners.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -40,7 +40,7 @@
+                     <tbody>
+                     {% for partner in partners %}
+                         <tr>
+-                            <td><a href="{% url 'partner_detailed' name=partner.name %}"
++                            <td><a href="{% url 'partner_detailed' indef=partner.indef %}"
+                                    class="Name_table">{{ partner.name }} {{ partner.surname }} </a></td>
+                             <td>{{ partner.isWorker | yesno:"Так,Ні" }}</td>
+                             <td>{{ partner.isPartner| yesno:"Так,Ні" }}</td>
+@@ -63,7 +63,7 @@
+                         <div class="card-body">
+                             <h5 class="card-title">{{ partner.name }}</h5>
+                             <p class="card-text">{{ partner.info }}</p>
+-                            <a href="{% url 'partner_detailed' name=partner.name %}"
++                            <a href="{% url 'partner_detailed' indef=partner.indef %}"
+                                class="btn btn-primary">Детальніше</a>
+                         </div>
+                     </div>
+Index: templates/logic/partners_detailed.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/partners_detailed.html	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ templates/logic/partners_detailed.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -28,6 +28,9 @@
+                                 <div class="container">
+                                     <h5 class="card-title">Контакты:</h5>
+                                     <hr>
++                                    {% if partner.indef %}
++                                        <p class="card-text">Електронна пошта: {{ partner.indef }}</p>
++                                    {% endif %}
+                                     {% if partner.email %}
+                                         <p class="card-text">Електронна пошта: {{ partner.email }}</p>
+                                     {% endif %}
+@@ -170,12 +173,12 @@
+                                 <h5 class="card-title">{{ workersTeam.title }}</h5>
+                                 <hr>
+                                 <p class="card-text">Відповідальна за команду особа:</p>
+-                                <a href="{% url 'partner_detailed' name=workersTeam.rel_partner.name %}"
++                                <a href="{% url 'partner_detailed' indef=workersTeam.rel_partner.indef %}"
+                                    class="btn btn-primary">{{ workersTeam.rel_partner.name }}</a>
+                                 <hr>
+                                 <p class="card-text">Розробник в цій команді:</p>
+                                 {% for woorker in workersTeam.workers.all %}
+-                                    <a href="{% url 'partner_detailed' name=woorker.partner.name %}"
++                                    <a href="{% url 'partner_detailed' indef=woorker.partner.indef %}"
+                                        class="btn btn-primary">{{ woorker.partner.name }}</a>
+                                 {% endfor %}
+                                 <hr>
+@@ -217,7 +220,7 @@
+                 {% endif %}
+             </div>
+             <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
+-                <a class="btn btn-primary float-end" href="{% url 'action_profile_new' name=partner.name %}">
++                <a class="btn btn-primary float-end" href="{% url 'action_profile_new' indef=partner.indef %}">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                          class="bi bi-plus-lg" viewBox="0 0 16 16">
+                         <path d="M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z"/>
+Index: templates/logic/projects_list.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/logic/projects_list.html	(revision faa7c41265a2c316478bb553e0e831c9ab0196f7)
++++ templates/logic/projects_list.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -26,24 +26,21 @@
+                 <table class="table table-bordered table-hover sortable">
+                     <thead>
+                     <tr>
+-                        <th scope="col">Назва</th>
+-                        <th scope="col">Цільова тематика</th>
+-                        <th scope="col">Цільова аудиторія</th>
+-                        <th scope="col">Умови надання</th>
+-                        <th scope="col">Вартість у грн.</th>
+-                        <th scope="col">Кількість користувачів</th>
++                        <th scope="col">Коротка назва розробки</th>
++                        <th scope="col">Галузь</th>
++                        <th scope="col">Ступінь готовності розробки</th>
++                        <th scope="col">Сутність та стислий опис</th>
++                        <th scope="col"></th>
+                     </tr>
+                     </thead>
+                     <tbody>
+-                    {% for service in services %}
++                    {% for project in projects %}
+                         <tr>
+-                        <td><a href="{% url 'service_detailed' title=service.title %}"
+-                                   class="Name_table">{{ service.title }}</a></td>
+-                            <td>{{ service.get_category_display }}</td>
+-                            <td>{{ service.target }}</td>
+-                            <td>{{ service.terms }}</td>
+-                            <td>{{ service.price }}</td>
+-                            <td>{{ service.recipient_of_services.count }}</td>
++                            <td>{{ project.title }}</td>
++                            <td>{{ project.get_category_display }}</td>
++                            <td>{{ project.get_projectStage_display }}</td>
++                            <td>{{ project.main }}</td>
++                            <td><a href="{% url 'development_take' pk=project.pk %}" class="btn btn-primary">Взятися!</a></td>
+                         </tr>
+                     {% endfor %}
+                     </tbody>
+Index: templates/login/Personal_Page.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/login/Personal_Page.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ templates/login/Personal_Page.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,13 @@
++{% extends 'logic/base.html' %}
++{% block content %}
++    <div class="container">
++        <div class="row">
++            <div class="col">
++            </div>
++            <div class="col">
++            <div class="col">
++            </div>
++        </div>
++    </div>
++
++{% endblock %}
+\ No newline at end of file
+Index: templates/login/login.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- templates/login/login.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
++++ templates/login/login.html	(revision d19602e1b85a0791dc8b0e5f2fa2a5d2d55833fe)
+@@ -0,0 +1,46 @@
++{% extends 'logic/base.html' %}
++{% block content %}
++    <div class="container">
++        <div class="row">
++            <div class="col">
++            </div>
++            <div class="col">
++                <div class="container-fluid container-home container-login">
++                    <form class="form-signin" method="post">{% csrf_token %}
++
++                        <h1 class="h3 mb-3 font-weight-normal">Login</h1>
++
++                        <input type="email" name="email" id="inputEmail" class="form-control"
++                               placeholder="Email address" required autofocus>
++
++                        <input type="password" name="password" id="inputPassword" class="form-control"
++                               placeholder="Password" required>
++
++                        {% for field in login_form %}
++                            <p>
++                                {% for error in field.errors %}
++                                    <p style="color: red">{{ error }}</p>
++                                {% endfor %}
++                            </p>
++                        {% endfor %}
++                        {% if login_form.non_field_errors %}
++                            <div style="color: red">
++                                {% for error in login_form.non_field_errors %}
++                                    <p>{{ error }}</p>
++                                {% endfor %}
++                            </div>
++
++                        {% endif %}
++
++                        <button class="btn btn-lg btn-primary btn-block" type="submit">Log in</button>
++
++                    </form>
++
++                </div>
++            </div>
++            <div class="col">
++            </div>
++        </div>
++    </div>
++
++{% endblock %}
+\ No newline at end of file
+diff --git account/__init__.py account/__init__.py
+new file mode 100644
+diff --git account/migrations/__init__.py account/migrations/__init__.py
+new file mode 100644
+diff --git db.sqlite3 db.sqlite3
+index dbe886292a0d295109016c5355988484073d3719..851f43d06b99626ea72118033e8fb27dc69fe568
+GIT binary patch
+literal 323584
+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
+IEmYh810t6_zW@LL
+
+diff --git python python
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+GIT binary patch
+literal 0
+Hc$@<O00001
+
