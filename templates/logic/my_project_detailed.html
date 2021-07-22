@@ -1,0 +1,48 @@
+{% extends 'logic/base.html' %}
+{% block content %}
+    <div class="container main-container">
+        <div class="card">
+            <div class="card-header">
+                Загальна
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Назва проекту : {{ project.title }} </h5>
+                <hr>
+                <div class="row">
+                    <div class="col">
+                        <div class="container">
+                            <h5 class="card-title">Проектна команда: {{ project.projectTeams.titleW }}</h5>
+                            <hr>
+                            <h6>Відповідальна
+                                особа: {{ project.projectTeams.rel_partner.name }} {{ project.projectTeams.rel_partner.surname }} </h6>
+                            {% for worker in workers %}
+                                <a href="{% url 'partner_detailed' indef=worker.partner.indef %}"
+                                   class="btn btn-primary">{{ worker.partner.name }}</a>
+                            {% endfor %}
+                            <hr>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="container">
+
+                            <h5 class="card-title">Мітки:</h5>
+                            <hr>
+                            <h6>Ступінь готовності розробки: {{ project.get_projectStage_display }}</h6> <br>
+                            <h6>Галузь: {{ project.get_category_display }}</h6>
+                            <hr>
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <h5 class="card-title">Сутність та стислий опис:</h5>
+                    <hr>
+                    <p>{{ project.main }}</p>
+                    <hr>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+    </div>
+{% endblock %}

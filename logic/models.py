@@ -2,9 +2,10 @@ from django.db import models
 from ckeditor.fields import RichTextField
 from phonenumber_field.modelfields import PhoneNumberField
 from django.conf import settings
-from django.db.models.signals import post_save, pre_delete, post_delete
+from django.db.models.signals import post_save, pre_delete, post_delete, pre_init, post_init
 from django.dispatch import receiver
 from taggit.managers import TaggableManager
+from django.utils.crypto import get_random_string
 
 ALL = 'all'
 ECOLOGY = 'eco'
@@ -56,21 +57,29 @@ class Partner(models.Model):
     email = models.EmailField("Електронна пошта ", unique=True)
     phone = PhoneNumberField("Телефон", blank=False, unique=True)
     phone2 = PhoneNumberField("Телефон доп.", null=True, blank=True, unique=True)
-    GoogleDisk = models.URLField("Посилання на гугл диск", blank=False, default="#")
-    Telegram = models.CharField("Telegram", max_length=30, blank=True, )
-    info = RichTextField("Інф.", blank=True, max_length=600)
+    GoogleDisk = models.URLField("Посилання на гугл диск", blank=True)
+    Telegram = models.CharField("Telegram", max_length=30, blank=True)
+    info = models.TextField("Інф.", blank=True, max_length=600)
     adress = models.CharField("Адреса", max_length=70, blank=True)
     notion = models.CharField("Notion", blank=True, max_length=30)
-    linkedIn = models.URLField("Посилання на linkedIn", blank=True, default="#")
-    personal_page = models.URLField("Посилання на персональну сторінку", blank=True, default="#")
+    linkedIn = models.URLField("Посилання на linkedIn", blank=True)
+    personal_page = models.URLField("Посилання на персональну сторінку", blank=True)
     skype = models.CharField("Skype", blank=True, max_length=30)
-    fb = models.URLField("Посилання на Facebook", blank=True, default="#")
+    fb = models.URLField("Посилання на Facebook", blank=True)
     isWorker = models.BooleanField("Розробник?", default=False)
     isPartner = models.BooleanField("Партнер?", default=False)
     isSeviceGiver = models.BooleanField("Надавач сервісів?", default=False)
     isSeviceTaker = models.BooleanField("Користувач сервісів?", default=False)
     isInvestor = models.BooleanField("Інвестор?", default=False)
     isStudent = models.BooleanField("Студент?", default=False)
+    indef = models.CharField(
+        max_length=10,
+        blank=False,
+        editable=False,
+    )
+    valid = models.BooleanField(
+        default=False,
+    )
 
     def __str__(self):
         return self.name
@@ -86,40 +95,46 @@ class WorkerProfile(models.Model):
 
 
 class WorkersTeam(models.Model):
-    title = models.CharField("Назва команди", max_length=60)
+    titleW = models.CharField("Назва команди", max_length=60)
     rel_partner = models.ForeignKey(Partner, on_delete=models.PROTECT, null=True, blank=True,
                                     verbose_name="Відповідальна за команду особа")
     workers = models.ManyToManyField(WorkerProfile, verbose_name="Пов'язані розробники")
 
     def __str__(self):
-        return self.title
+        return self.titleW
 
 
 class Project(models.Model):
-    TEH = 'teh'
-    SER = 'ser'
+    REC = 'rec'
+    TTL = 'ttl'
+    PRO = 'pro'
+    TIA = 'tia'
     TYP = [
-        (TEH, 'Технологічні'),
-        (SER, 'Сервісні'),
+        (REC, 'Дослідження та експериментальне підтвердження'),
+        (TTL, 'Технологія, перевірена в лабораторії'),
+        (PRO, 'Наявний прототип'),
+        (TIA, 'Технологія має промислові застосування'),
     ]
-    title = models.CharField("Назва проєкту", max_length=60)
-    main = RichTextField("Короткий опис проєкту", blank=True, max_length=600)
-    category = models.CharField("Тематика",
+    title = models.CharField("Коротка назва розробки", max_length=60)
+    main = models.TextField("Сутність та стислий опис", blank=True, max_length=600)
+    category = models.CharField("Галузь",
                                 max_length=3,
                                 choices=Category,
                                 default=ALL,
                                 )
-    projectType = models.CharField("Тип проєкту",
-                                   max_length=3,
-                                   choices=TYP,
-                                   default=TEH,
-                                   )
+    projectStage = models.CharField("Ступінь готовності розробки",
+                                    max_length=3,
+                                    choices=TYP,
+                                    default=REC,
+                                    )
     projectTeams = models.OneToOneField(WorkersTeam, on_delete=models.PROTECT, null=True, blank=True,
                                         verbose_name="Пов'язана проєктна команда")
+    rel_manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, blank=True, null=True,
+                                    verbose_name="Пов'язаний менеджер")
+    firstvalid = models.BooleanField("Перша валідіфікація", default=False)
 
-
-def __str__(self):
-    return self.title
+    def __str__(self):
+        return self.title
 
 
 class Action(models.Model):
@@ -171,6 +186,12 @@ class Service(models.Model):
 
     def __str__(self):
         return self.title
+
+
+@receiver(post_init, sender=Partner)
+def indef_giver(sender, instance, **kwargs):
+    if not instance.indef:
+        instance.indef = get_random_string(10)
 
 
 @receiver(post_save, sender=Partner)

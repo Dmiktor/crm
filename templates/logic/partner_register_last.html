@@ -1,0 +1,57 @@
+{% extends 'logic/base.html' %}
+{% block content %}
+    <br>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+            </div>
+            <div class="col-6">
+                <div class="container-fluid container-home">
+                    <form method="POST" class="post-form">{% csrf_token %}
+                        <div class="text-start">
+                            <h2 class="text-center">Останній крок реєстрації в системі</h2><br>
+                            <h5>Так як ви розробник, вкажіть додаткову інформацію про вас</h5><br>
+                            {{ workerform.org }}<br>
+                            {{ workerform.position }}<br>
+                            <h5>Ваша проектна команда:</h5><br>
+                            {{ teamform.titleW }}<br>
+                            <input type="text" name="workers" class="form-control"
+                                   placeholder="Введіть email членів вашої команди через пробіл" required=""
+                                   id="id_workers"><br>
+                            <h5>Ваша розробка:</h5><br>
+                            {{ projectform.title }}<br>
+                            {{ projectform.main }}<br>
+                            {{ projectform.category }}<br>
+                            {{ projectform.projectStage }}<br>
+                        </div>
+                        {% for field in form %}
+                            <p>
+                                {% for error in field.errors %}
+                                    <p style="color: red">{{ error }}</p>
+                                {% endfor %}
+                            </p>
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                            <div style="color: red">
+                                {% for error in form.non_field_errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if error %}
+                            <div style="color: red">
+                                <p>{{ error }}</p>
+                            </div>
+                        {% endif %}
+                        <br>
+                        <button class="btn btn-lg btn-primary btn-block" type="submit">Зареєструватися!</button>
+
+                    </form>
+                </div>
+            </div>
+            <div class="col">
+            </div>
+        </div>
+    </div>
+    <br>
+{% endblock %}

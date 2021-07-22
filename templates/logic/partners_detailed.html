@@ -28,6 +28,9 @@
                                 <div class="container">
                                     <h5 class="card-title">Контакты:</h5>
                                     <hr>
+                                    {% if partner.indef %}
+                                        <p class="card-text">Електронна пошта: {{ partner.indef }}</p>
+                                    {% endif %}
                                     {% if partner.email %}
                                         <p class="card-text">Електронна пошта: {{ partner.email }}</p>
                                     {% endif %}
@@ -170,12 +173,12 @@
                                 <h5 class="card-title">{{ workersTeam.title }}</h5>
                                 <hr>
                                 <p class="card-text">Відповідальна за команду особа:</p>
-                                <a href="{% url 'partner_detailed' name=workersTeam.rel_partner.name %}"
+                                <a href="{% url 'partner_detailed' indef=workersTeam.rel_partner.indef %}"
                                    class="btn btn-primary">{{ workersTeam.rel_partner.name }}</a>
                                 <hr>
                                 <p class="card-text">Розробник в цій команді:</p>
                                 {% for woorker in workersTeam.workers.all %}
-                                    <a href="{% url 'partner_detailed' name=woorker.partner.name %}"
+                                    <a href="{% url 'partner_detailed' indef=woorker.partner.indef %}"
                                        class="btn btn-primary">{{ woorker.partner.name }}</a>
                                 {% endfor %}
                                 <hr>
@@ -217,7 +220,7 @@
                 {% endif %}
             </div>
             <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
-                <a class="btn btn-primary float-end" href="{% url 'action_profile_new' name=partner.name %}">
+                <a class="btn btn-primary float-end" href="{% url 'action_profile_new' indef=partner.indef %}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                          class="bi bi-plus-lg" viewBox="0 0 16 16">
                         <path d="M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z"/>

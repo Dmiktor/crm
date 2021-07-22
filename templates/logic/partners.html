@@ -40,7 +40,7 @@
                     <tbody>
                     {% for partner in partners %}
                         <tr>
-                            <td><a href="{% url 'partner_detailed' name=partner.name %}"
+                            <td><a href="{% url 'partner_detailed' indef=partner.indef %}"
                                    class="Name_table">{{ partner.name }} {{ partner.surname }} </a></td>
                             <td>{{ partner.isWorker | yesno:"Так,Ні" }}</td>
                             <td>{{ partner.isPartner| yesno:"Так,Ні" }}</td>
@@ -63,7 +63,7 @@
                         <div class="card-body">
                             <h5 class="card-title">{{ partner.name }}</h5>
                             <p class="card-text">{{ partner.info }}</p>
-                            <a href="{% url 'partner_detailed' name=partner.name %}"
+                            <a href="{% url 'partner_detailed' indef=partner.indef %}"
                                class="btn btn-primary">Детальніше</a>
                         </div>
                     </div>

@@ -23,16 +23,24 @@ SECRET_KEY = '3pi+v0s!14^v=!y4^5o2jif=*6-2cauiy1pqgzg^kxur!9$9k+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
+AUTH_USER_MODEL = "account.Account"
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.AllowAllUsersModelBackend',
+    'account.backends.CaseInsensitiveModelBackend',
+)
+ALLOWED_HOSTS = ['26.67.244.114', '127.0.0.1', '192.168.0.1', '212.80.35.208', '192.168.0.103']
 
 # Application definition
 
 INSTALLED_APPS = [
+    # Opensrs
     'phonenumber_field',
     'ckeditor',
     'taggit',
+    # My apps
     'logic',
+    'account',
+    # Django app
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

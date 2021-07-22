@@ -30,17 +30,15 @@
                         <th scope="col">Галузь</th>
                         <th scope="col">Ступінь готовності розробки</th>
                         <th scope="col">Сутність та стислий опис</th>
-                        <th scope="col"></th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for project in projects %}
                         <tr>
-                            <td>{{ project.title }}</td>
+                            <td><a href="{% url 'project_detailed' pk=project.pk %}" class="btn btn-primary">{{ project.title }}</a></td>
                             <td>{{ project.get_category_display }}</td>
                             <td>{{ project.get_projectStage_display }}</td>
                             <td>{{ project.main }}</td>
-                            <td><a href="{% url 'development_take' pk=project.pk %}" class="btn btn-primary">Взятися!</a></td>
                         </tr>
                     {% endfor %}
                     </tbody>

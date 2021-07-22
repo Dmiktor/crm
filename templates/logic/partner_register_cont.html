@@ -1,0 +1,73 @@
+{% extends 'logic/base.html' %}
+{% block content %}
+    <br>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+            </div>
+            <div class="col-6">
+                <div class="container-fluid container-home">
+                    <form method="POST" class="post-form">{% csrf_token %}
+                        <div class="text-start">
+                            <h2 class="text-center">Вітаємо! Перший етап реєстрації пройдено!</h2><br>
+                            <h5>Ось ваш унікальний індефекатор в системі -
+                                <mark>{{ partner.indef }}</mark>
+                                .
+                                За його допомогою ви зможете в майбутньому додавати свої розробки і сервіси.
+                            </h5>
+                            <h5>Ідефекатор це ваш ключ в систему, збережіть його.
+                            </h5>
+                            <br>
+                            <h5>Додаткова інформація:</h5><br>
+                            <div class="form-check form-switch fs-5">
+                                {{ form.isWorker }}
+                                <label class="form-check-label" for="flexSwitchCheckDefault">Відзначте це, якщо ви
+                                    розробник, і збираєтеся внести систему інформацію про свою розробку.</label>
+                            </div>
+                            <br>
+                            <div class="form-check form-switch fs-5">
+                                {{ form.isSeviceGiver }}
+                                <label class="form-check-label" for="flexSwitchCheckDefault">Відзначте це, якщо ви
+                                    надавач
+                                    сервісів і збираєтеся внести інформацію про свій сервіс.</label>
+                            </div>
+                            <br>
+                            <div class="form-check form-switch fs-5">
+                                {{ form.isInvestor }}
+                                <label class="form-check-label" for="flexSwitchCheckDefault">Відзначте це, якщо ви
+                                    інвестор і зацікавлені у розробках в нашій системі.</label>
+                            </div>
+                            <br>
+                            <div class="form-check form-switch fs-5">
+                                {{ form.isStudent }}
+                                <label class="form-check-label" for="flexSwitchCheckDefault">Відзначте це, якщо ви
+                                    студент.</label>
+                            </div>
+                            <br>
+                        </div>
+                        {% for field in form %}
+                            <p>
+                                {% for error in field.errors %}
+                                    <p style="color: red">{{ error }}</p>
+                                {% endfor %}
+                            </p>
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                            <div style="color: red">
+                                {% for error in form.non_field_errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <br>
+                        <button class="btn btn-lg btn-primary btn-block" type="submit">Далі...</button>
+
+                    </form>
+                </div>
+            </div>
+            <div class="col">
+            </div>
+        </div>
+    </div>
+    <br>
+{% endblock %}

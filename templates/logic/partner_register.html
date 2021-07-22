@@ -1,0 +1,64 @@
+{% extends 'logic/base.html' %}
+{% block content %}
+    <br>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+            </div>
+            <div class="col-6">
+                <div class="container-fluid container-home">
+                    <form method="POST" class="post-form">{% csrf_token %}
+                        <div class="text-start">
+                            <h2 class="text-center">Реєстрація нового учасника системи</h2><br>
+                            <h5>Що б вас зареєструвати нам обов'язково потрібно, що б ви вказали про себе цю
+                                інформацію:</h5><br>
+                            {{ form.name }}<br>
+                            {{ form.surname }}<br>
+                            {{ form.email }}<br>
+                            {{ form.phone }}<br>
+                            <h5>Додаткова контакта інформація:</h5><br>
+                            {{ form.nameEn }}<br>
+                            {{ form.surnameEn }}<br>
+                            {{ form.phone2 }}<br>
+                            {{ form.adress }}<br>
+                            <h5>Соціальні мережі:</h5><br>
+                            {{ form.Telegram }}<br>
+                            {{ form.skype }}<br>
+                            {{ form.fb }}<br>
+                            {{ form.notion }}<br>
+                            {{ form.personal_page }}<br>
+                            <h5>Вам є що ще про себе розповісти?</h5><br>
+                            {{ form.info }}<br>
+                            <div class="form-check form-switch fs-5">
+                                {{ form.valid }}
+                                <label class="form-check-label" for="flexSwitchCheckDefault">Ви даєте право на обробку
+                                    ваших персональних даних?</label>
+                            </div>
+                            <br>
+                        </div>
+                        {% for field in form %}
+                            <p>
+                                {% for error in field.errors %}
+                                    <p style="color: red">{{ error }}</p>
+                                {% endfor %}
+                            </p>
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                            <div style="color: red">
+                                {% for error in form.non_field_errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <br>
+                        <button class="btn btn-lg btn-primary btn-block" type="submit">Далі</button>
+
+                    </form>
+                </div>
+            </div>
+            <div class="col">
+            </div>
+        </div>
+    </div>
+    <br>
+{% endblock %}
