@@ -1,0 +1,44 @@
+{% extends 'logic/base.html' %}
+{% block content %}
+    <div class="container main-container">
+        <div class="card">
+            <div class="card-header">
+                <h5> {{ experiseRequest.rel_Section }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Категорія : {{ experiseRequest.get_category_display | safe }}</p>
+                <p class="card-text">{{ experiseRequest.date }}</p>
+                <h5 class="card-title">{{ experiseRequest.main | safe }}</h5>
+                <hr>
+                <p class="card-text">{{ experiseRequest.full | safe }}</p>
+                <hr>
+                <p class="float-end">Відповідальний
+                    менеджер: {{ experiseRequest.rel_manager.get_full_name }}</p>
+            </div>
+            <div class="card-header">
+                <h5>
+                    Відповідь:
+                </h5>
+            </div>
+            <form method="POST" class="post-form">{% csrf_token %}
+                <div class="card-body">
+                    <p class="card-text">{{ form.date }}</p>
+                    <h5 class="card-title">{{ form.main }}</h5>
+                    <hr>
+                    <p class="card-text">{{ form.full }}</p>
+                    <hr>
+                    <button class="btn btn-primary float-end" type="submit" href="">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                             class="bi bi-save-fill" viewBox="0 0 16 16">
+                            <path d="M8.5 1.5A1.5 1.5 0 0 1 10 0h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h6c-.314.418-.5.937-.5 1.5v7.793L4.854 6.646a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l3.5-3.5a.5.5 0 0 0-.708-.708L8.5 9.293V1.5z"/>
+                        </svg>
+                    </button>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+    </div>
+{% endblock %}

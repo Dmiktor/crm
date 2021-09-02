@@ -1,4 +1,5 @@
 {% load static %}
+{% load cropping %}
 
 <html lang="uk">
 <head>
@@ -9,6 +10,7 @@
 
     <link rel="stylesheet" href="{% static 'css/Crm.css' %}">
     <title>Hello, world!</title>
+    {{ formImg.media }}
 </head>
 <nav class="navbar navbar-expand-lg sticky-top bg-top">
     <div class="container-fluid">
@@ -32,9 +34,9 @@
                                 Інновації
                             </button>
                             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="{% url 'development_list'%}">Розробки</a>
+                                <a class="dropdown-item" href="{% url 'development_list' %}">Розробки</a>
                                 <a class="dropdown-item"
-                                   href="{% url 'my_projects'%}">Мои проект</a>
+                                   href="{% url 'my_projects' %}">Мои проект</a>
                             </div>
                         </div>
                     </li>
@@ -107,8 +109,18 @@
                         </div>
                     </li>
                 </ul>
-
             </div>
+            {% if user.is_projects_manager %}
+            {% endif %}
+            {% if user.is_events_manager %}
+            {% endif %}
+            {% if user.is_expertise_manager %}
+                <a class="btn btn-secondary nav-button" href="{% url 'my_expertise_requests' %}">Експертиза</a>
+            {% endif %}
+            {% if user.is_staff_manager %}
+                <a class="btn btn-secondary nav-button" href="{% url 'my_page' %}">Персонал</a>
+            {% endif %}
+            <a class="btn btn-secondary nav-button" href="{% url 'my_page' %}">Мій профіль</a>
         {% endif %}
     </div>
 </nav>

@@ -1,6 +1,8 @@
-from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.db import models
 from django.utils.crypto import get_random_string
+from image_cropping import ImageRatioField
+
 
 
 class MyAccountManager(BaseUserManager):
@@ -49,10 +51,19 @@ class Account(AbstractBaseUser):
     username = models.CharField(max_length=30, unique=True)
     date_joined = models.DateField(verbose_name='date joined', auto_now_add=True)
     last_login = models.DateField(verbose_name='last login', auto_now=True)
+
+    profile_pic = models.ImageField(null=True, blank=True, default='ProfPicDef.png')
+    cropping = ImageRatioField('profile_pic', '400x400')
+
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+
+    is_projects_manager = models.BooleanField(default=False)
+    is_events_manager = models.BooleanField(default=False)
+    is_expertise_manager = models.BooleanField(default=False)
+    is_staff_manager = models.BooleanField(default=False)
 
     first_name = models.CharField(max_length=40)
     last_name = models.CharField(max_length=40)
@@ -63,7 +74,7 @@ class Account(AbstractBaseUser):
     REQUIRED_FIELDS = ['username']
 
     def __str__(self):
-        return self.username
+        return self.get_full_name()
 
     def get_full_name(self):
         return ("%s %s" % (self.last_name, self.first_name)).strip()
@@ -73,3 +84,10 @@ class Account(AbstractBaseUser):
 
     def has_module_perms(self, app_label):
         return True
+
+
+class Expert(models.Model):
+    related_account = models.OneToOneField(Account, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.related_account.get_full_name()

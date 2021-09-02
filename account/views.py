@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from account.forms import AccountForm
+from logic.models import ExpertiseRequest, ExpertiseAnswer
 
 
 # Create your views here.
@@ -33,3 +34,17 @@ def login_in(request):
 
     context['login_form'] = form
     return render(request, 'login/login.html', context)
+
+
+def my_page(request):
+    context = {}
+    user = request.user
+    context['user'] = user
+    return render(request, 'login/Personal_Page.html', context)
+
+
+def expertise_requests(request):
+    context = {}
+    expertise_requests = ExpertiseRequest.objects.all()
+    context['expertise_requests'] = expertise_requests
+    return render(request, 'login/expertise_requests.html', context)

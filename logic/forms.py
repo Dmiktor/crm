@@ -1,9 +1,9 @@
 from venv import logger
-
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import EmailInput, URLInput, CheckboxInput, TextInput, Textarea, Select
 from django.shortcuts import get_object_or_404
+from image_cropping import ImageCropWidget
 
 from .models import *
 
@@ -198,4 +198,84 @@ class ProjectReg(forms.ModelForm):
                 'class': 'form-select',
                 'placeholder': 'Ступінь готовності розробки',
             }),
+        }
+
+
+class SectionForm(forms.ModelForm):
+    class Meta:
+        model = ProjectSectionType
+        fields = ('type', 'have_an_image')
+        widgets = {
+            'type': Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Тип',
+            }),
+            'valid': CheckboxInput(attrs={
+                'label': 'Додати зображення до Секціі?',
+                'class': 'form-check-input'
+            }),
+        }
+
+
+class SectionMainForm(forms.ModelForm):
+    class Meta:
+        model = ProjectSection
+        fields = ('header', 'main')
+        widgets = {
+            'header': TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Заголовок',
+            }),
+            'main': Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Головна частина',
+            }),
+        }
+
+
+class SectionImgForm(forms.ModelForm):
+    class Meta:
+        model = ProjectSectionImg
+        fields = ('img',)
+
+
+class ExpertiseRequestForm(forms.ModelForm):
+    class Meta:
+        model = ExpertiseRequest
+        fields = ('main', 'full', 'date', 'category', 'rel_Section')
+        widgets = {
+            'rel_Section': Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Повьязана секція',
+            }),
+            'category': Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Галузь',
+            }),
+            'main': TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Вкажіть тему  вчиненої дії'
+            }),
+            'full': Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Вкажіть короткий опис вчиненої дії',
+            }),
+
+            'date': DateInput()
+        }
+
+class ExpertiseAnswerForm(forms.ModelForm):
+    class Meta:
+        model = ExpertiseAnswer
+        fields = ('main', 'full', 'date', )
+        widgets = {
+            'main': TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Вкажіть тему  вчиненої дії'
+            }),
+            'full': Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Вкажіть короткий опис вчиненої дії',
+            }),
+            'date': DateInput()
         }

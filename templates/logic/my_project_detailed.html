@@ -1,48 +1,267 @@
 {% extends 'logic/base.html' %}
 {% block content %}
     <div class="container main-container">
-        <div class="card">
-            <div class="card-header">
-                Загальна
+        <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home"
+                        type="button" role="tab" aria-controls="nav-home" aria-selected="true">Загальна
+                </button>
+                <button class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile"
+                        type="button" role="tab" aria-controls="nav-profile" aria-selected="false">Експертиза
+                </button>
+                <button class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact"
+                        type="button" role="tab" aria-controls="nav-contact" aria-selected="false">Примітки
+                </button>
             </div>
-            <div class="card-body">
-                <h5 class="card-title">Назва проекту : {{ project.title }} </h5>
-                <hr>
-                <div class="row">
-                    <div class="col">
+        </nav>
+        <div class="tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h5> Публічна Частина
+                            <a class="btn btn-primary float-end" href="{% url 'project_detailed_edit' pk=project.pk %}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                     class="bi bi-pencil-fill" viewBox="0 0 16 16">
+                                    <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/>
+                                </svg>
+                            </a>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Назва проекту : {{ project.title }} </h5>
+                        <hr>
+                        <div class="row">
+                            <div class="col">
+                                <div class="container">
+                                    <h5 class="card-title">Проектна команда: {{ project.projectTeams.titleW }}</h5>
+                                    <hr>
+                                    <h6>Відповідальна
+                                        особа: {{ project.projectTeams.rel_partner.name }} {{ project.projectTeams.rel_partner.surname }} </h6>
+                                    {% for worker in workers %}
+                                        <a href="{% url 'partner_detailed' indef=worker.partner.indef %}"
+                                           class="btn btn-primary">{{ worker.partner.name }}</a>
+                                    {% endfor %}
+                                    <hr>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="container">
+                                    <h5 class="card-title">Мітки:</h5>
+                                    <hr>
+                                    <h6>Ступінь готовності розробки: {{ project.get_projectStage_display }}</h6> <br>
+                                    <h6>Галузь: {{ project.get_category_display }}</h6>
+                                    <hr>
+                                </div>
+                            </div>
+                        </div>
                         <div class="container">
-                            <h5 class="card-title">Проектна команда: {{ project.projectTeams.titleW }}</h5>
+                            <h5 class="card-title">Сутність та стислий опис:</h5>
                             <hr>
-                            <h6>Відповідальна
-                                особа: {{ project.projectTeams.rel_partner.name }} {{ project.projectTeams.rel_partner.surname }} </h6>
-                            {% for worker in workers %}
-                                <a href="{% url 'partner_detailed' indef=worker.partner.indef %}"
-                                   class="btn btn-primary">{{ worker.partner.name }}</a>
-                            {% endfor %}
+                            <p>{{ project.main }}</p>
                             <hr>
                         </div>
                     </div>
-                    <div class="col">
-                        <div class="container">
+                    {% if not project.firstvalid %}
+                        <div class="card-header">
+                            <h5>
+                                <a class="btn btn-primary float-end"
+                                   href="{% url 'project_set_valid_true' pk=project.pk %}">
+                                    Проєкт пройшов перву валідіфікацію
+                                </a></h5>
 
-                            <h5 class="card-title">Мітки:</h5>
-                            <hr>
-                            <h6>Ступінь готовності розробки: {{ project.get_projectStage_display }}</h6> <br>
-                            <h6>Галузь: {{ project.get_category_display }}</h6>
-                            <hr>
+                        </div>
+                    {% endif %}
+                    {% if project.firstvalid and not project.finalvalid %}
+                        <div class="card-header">
+                            <h5>
+                                <a class="btn btn-primary float-end"
+                                   href="{% url 'project_add_section' pk=project.pk %}">
+                                    Додати секцію
+                                </a></h5>
+                        </div>
+                    {% endif %}
+
+                </div>
+                {% for projectsectiont in projectsections %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h5> {{ projectsectiont.get_type_display }}
+                                <a class="btn btn-primary float-end"
+                                   href="{% url 'project_edit_section_and_img' pk=project.pk pk1=projectsectiont.pk %}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                         class="bi bi-pencil-fill" viewBox="0 0 16 16">
+                                        <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/>
+                                    </svg>
+                                </a>
+                                <button type="button" class="btn btn-primary float-end" data-bs-toggle="modal"
+                                        data-bs-target="#exampleModal{{ projectsectiont.pk }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                         class="bi bi-trash" viewBox="0 0 16 16">
+                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                        <path fill-rule="evenodd"
+                                              d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                    </svg>
+                                </button>
+                                </a>
+                            </h5>
+                        </div>
+                        <div class="row g-0">
+                            {% if projectsectiont.have_an_image %}
+                                <div class="col-md-4">
+                                    <img src="{{ projectsectiont.projectsectionimg.img.url }}"
+                                         class="img-fluid rounded-start">
+                                </div>
+                            {% endif %}
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ projectsectiont.projectsection.header }}</h5>
+                                    <p class="card-text">{{ projectsectiont.projectsection.main }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal fade" id="exampleModal{{ projectsectiont.pk }}" tabindex="-1"
+                             aria-labelledby="exampleModalLabel"
+                             aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Обережно!</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Ви збираєтеся видалити секцію - {{ projectsectiont.get_type_display }}, ця дія
+                                        не може бути скасована!
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                                            Скасувати
+                                        </button>
+                                        <a type="button" class="btn btn-primary"
+                                           href="{% url 'project_detailed_section_delete' pk=project.pk pk1=projectsectiont.pk %}">Підтвердити</a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="container">
-                    <h5 class="card-title">Сутність та стислий опис:</h5>
-                    <hr>
-                    <p>{{ project.main }}</p>
-                    <hr>
-                </div>
+                {% endfor %}
+            </div>
+            <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
+                <h5>
+                    <br>
+                    <a class="btn btn-primary float-end" href="{% url 'expert_get_project_new'  pk=project.pk %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                             class="bi bi-plus-lg" viewBox="0 0 16 16">
+                            <path d="M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z"></path>
+                        </svg>
+                    </a>
+                    <br>
+                </h5>
+                {% for expertiseRequest in expertisRequests %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h5> {{ expertiseRequest.rel_Section }} <a class="btn btn-primary float-end"
+                                                                       href="{% url 'project_edit_expert' pk=project.pk pk1=expertiseRequest.pk %}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                     class="bi bi-pencil-fill" viewBox="0 0 16 16">
+                                    <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"></path>
+                                </svg>
+                            </a>
+                                <button type="button" class="btn btn-primary float-end" data-bs-toggle="modal"
+                                        data-bs-target="#exampleModals{{ expertiseRequest.pk }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                         class="bi bi-trash" viewBox="0 0 16 16">
+                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"></path>
+                                        <path fill-rule="evenodd"
+                                              d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"></path>
+                                    </svg>
+                                </button>
+                            </h5>
+                        </div>
+                        <div class="modal fade" id="exampleModals{{ expertiseRequest.pk }}" tabindex="-1"
+                             aria-labelledby="exampleModalLabel"
+                             aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Обережно!</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Ви збираєтеся скасувати запит на експертизу із теми
+                                        - {{ expertiseRequest.main }}, ця дія
+                                        не може бути скасована!
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                                            Скасувати
+                                        </button>
+                                        <a type="button" class="btn btn-primary"
+                                           href="{% url 'project_detailed_expert_delete' pk=project.pk pk1=expertiseRequest.pk %}">Підтвердити</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Категорія : {{ expertiseRequest.get_category_display | safe }}</p>
+                            <p class="card-text">{{ expertiseRequest.date }}</p>
+                            <h5 class="card-title">{{ expertiseRequest.main | safe }}</h5>
+                            <hr>
+                            <p class="card-text">{{ expertiseRequest.full | safe }}</p>
+                            <hr>
+                            <p class="float-end">Відповідальний
+                                менеджер: {{ expertiseRequest.rel_manager.get_full_name }}</p>
+                        </div>
+                        {% if not expertiseRequest.expertiseanswer %}
+                            <div class="card-header">
+                                <h5> Відповідь досі не отримано </h5>
+                            </div>
+                        {% else %}
+                            <div class="card-header">
+                                <h5>
+                                    Відповідь:
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">{{ expertiseRequest.expertiseanswer.date | safe }}</p>
+                                <h5 class="card-title">{{ expertiseRequest.expertiseanswer.main | safe }}</h5>
+                                <hr>
+                                <p class="card-text">{{ expertiseRequest.expertiseanswer.full | safe }}</p>
+                                <hr>
+                                <p class="float-end">Відповідальний
+                                    експерт: {{ expertiseRequest.expertiseanswer.rel_manager.get_full_name }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
+                <h5>
+                    <br>
+                    <a class="btn btn-primary float-end" href="{% url 'action_project_new' pk=project.pk %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                             class="bi bi-plus-lg" viewBox="0 0 16 16">
+                            <path d="M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z"/>
+                        </svg>
+                    </a>
+                    <br>
+                </h5>
+                {% for action in actions %}
+                    <div class="card">
+                        <div class="card-header">
+                            {{ action.date }}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ action.main | safe }}</h5>
+                            <hr>
+                            <p class="card-text">{{ action.full | safe }}</p>
+                            <hr>
+                            <p class="float-end">Відповідальний менеджер: {{ action.rel_manager.get_full_name }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
-    </div>
-    </div>
-    </div>
     </div>
 {% endblock %}

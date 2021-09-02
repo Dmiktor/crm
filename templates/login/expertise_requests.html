@@ -1,0 +1,55 @@
+{% extends 'logic/base.html' %}
+{% block content %}
+    <div class="container main-container">
+        {% for expertiseRequest in expertise_requests %}
+            <div class="card">
+                <div class="card-header">
+                    <h5> {{ expertiseRequest.rel_Section }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Категорія : {{ expertiseRequest.get_category_display | safe }}</p>
+                    <p class="card-text">{{ expertiseRequest.date }}</p>
+                    <h5 class="card-title">{{ expertiseRequest.main | safe }}</h5>
+                    <hr>
+                    <p class="card-text">{{ expertiseRequest.full | safe }}</p>
+                    <hr>
+                    <p class="float-end">Відповідальний
+                        менеджер: {{ expertiseRequest.rel_manager.get_full_name }}</p>
+                </div>
+                {% if not expertiseRequest.expertiseanswer %}
+                    <div class="card-header">
+                        <h5> Відповідь досі не отримано
+                            <a class="btn btn-primary float-end"
+                               href="{% url 'experise_answer' pk=expertiseRequest.pk %}">
+                                Відповісти
+                            </a>
+                            <a class="btn btn-primary float-end" style="margin-right: 1%"
+                               href="{% url 'project_detailed' pk=expertiseRequest.rel_projects.pk %}">
+                                Переглянути проект
+                            </a>
+                        </h5>
+                    </div>
+                {% else %}
+                    <div class="card-header">
+                        <h5>
+                            Відповідь:
+
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ expertiseRequest.expertiseanswer.date | safe }}</p>
+                        <h5 class="card-title">{{ expertiseRequest.expertiseanswer.main | safe }}</h5>
+                        <hr>
+                        <p class="card-text">{{ expertiseRequest.expertiseanswer.full | safe }}</p>
+                        <hr>
+                        <p class="float-end">Відповідальний
+                            експерт: {{ expertiseRequest.expertiseanswer.rel_manager.get_full_name }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    </div>
+    </div>
+{% endblock %}

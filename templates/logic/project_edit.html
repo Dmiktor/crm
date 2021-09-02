@@ -1,0 +1,65 @@
+{% extends 'logic/base.html' %}
+{% block content %}
+    <br>
+
+    <div class="container main-container">
+        <form method="POST" class="post-form">{% csrf_token %}
+        <div class="card">
+            <div class="card-header">
+                <h5> Публічна Частина
+                    <button class="btn btn-primary float-end" type="submit" href="">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                             class="bi bi-save-fill" viewBox="0 0 16 16">
+                            <path d="M8.5 1.5A1.5 1.5 0 0 1 10 0h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h6c-.314.418-.5.937-.5 1.5v7.793L4.854 6.646a.5.5 0 1 0-.708.708l3.5 3.5a.5.5 0 0 0 .708 0l3.5-3.5a.5.5 0 0 0-.708-.708L8.5 9.293V1.5z"/>
+                        </svg>
+                    </button>
+                </h5>
+
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <label for="inputEmail3" class="col-sm-2 col-form-label"> <h5 class="align-middle"> Назва проекту:</h5></label>
+                    <div class="col-sm-6">
+                        {{ projectform.title }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col">
+                        <div class="container">
+                            <h5 class="card-title">Проектна команда: {{ project.projectTeams.titleW }}</h5>
+                            <hr>
+                            <h6>Відповідальна
+                                особа: {{ project.projectTeams.rel_partner.name }} {{ project.projectTeams.rel_partner.surname }} </h6>
+                            {% for worker in workers %}
+                                <a href="{% url 'partner_detailed' indef=worker.partner.indef %}"
+                                   class="btn btn-primary">{{ worker.partner.name }}</a>
+                            {% endfor %}
+                            <hr>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="container">
+                            <h5 class="card-title">Мітки:</h5>
+                            <hr>
+                            <h6>Ступінь готовності розробки: </h6> {{ projectform.projectStage }}
+                            <br>
+                            <h6>Галузь:</h6>
+                            {{ projectform.category }}
+                            <hr>
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <h5 class="card-title">Сутність та стислий опис:</h5>
+                    <hr>
+                    <p>{{ projectform.main }}</p>
+                    <hr>
+                </div>
+            </div>
+        </div>
+    </form>
+    </div>
+    <br>
+{% endblock %}
+

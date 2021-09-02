@@ -15,6 +15,9 @@ a {
 a:hover {
     color: #9678AD;
 }
+.nav-button{
+    font-size: 1.2rem;
+}
 
 .bg-top {
     background-color: #29123B;
@@ -25,6 +28,7 @@ a:hover {
     color: #29123B;
     background-color: white;
     margin-top: 10px;
+    margin-bottom: 10px;
     border: 2px solid #29123B;
 }
 
@@ -190,4 +194,9 @@ a:active {
 
 .h3 {
     text-align: center;
+}
+
+.prof_pic {
+    width: 100%;
+    float: left;
 }

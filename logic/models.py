@@ -1,5 +1,6 @@
 from django.db import models
 from ckeditor.fields import RichTextField
+from django.db.models import ForeignKey
 from phonenumber_field.modelfields import PhoneNumberField
 from django.conf import settings
 from django.db.models.signals import post_save, pre_delete, post_delete, pre_init, post_init
@@ -132,9 +133,74 @@ class Project(models.Model):
     rel_manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, blank=True, null=True,
                                     verbose_name="Пов'язаний менеджер")
     firstvalid = models.BooleanField("Перша валідіфікація", default=False)
+    secondvalid = models.BooleanField("Проект готовий до фінальноі перевірки", default=False)
+    finalvalid = models.BooleanField("Проэкт готовий стати инф карткою", default=False)
 
     def __str__(self):
         return self.title
+
+
+class ProjectSectionType(models.Model):
+    RISK = 'risk'
+    BUSI = 'busi'
+    OBJC = 'objc'
+    LOCA = 'loca'
+    BRAN = 'bran'
+    PROD = 'prod'
+    TEAM = 'team'
+    INCO = 'inco'
+    FINS = 'fins'
+    PERS = 'pers'
+    TERM = 'term'
+    TIME = 'time'
+    KLIN = 'klin'
+    LIFE = 'life'
+    FREE = 'free'
+    TYP = [
+        (RISK, 'Ризики'),
+        (BUSI, 'Бізнес план'),
+        (OBJC, 'Об`єкт'),
+        (LOCA, 'Локація'),
+        (BRAN, 'Галузь'),
+        (PROD, 'Продукт'),
+        (TEAM, 'Команда'),
+        (INCO, 'Рентабельність'),
+        (FINS, 'Фінансування'),
+        (PERS, 'Обслуговуючий персонал'),
+        (TERM, 'Вимоги'),
+        (TIME, 'Час розгортання проекту'),
+        (KLIN, 'Клієнти'),
+        (LIFE, 'Життєвий цикл'),
+        (FREE, 'Довільна Інформація'),
+    ]
+
+    type = models.CharField("Тема абзацу",
+                            max_length=4,
+                            choices=TYP,
+                            default=FREE,
+                            )
+    have_an_image = models.BooleanField(default=False)
+    rel_project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.get_type_display()
+
+
+class ProjectSectionImg(models.Model):
+    img = models.ImageField(null=True, blank=True, upload_to="logic/originals/")
+    section = models.OneToOneField(ProjectSectionType, models.CASCADE)
+
+    def __str__(self):
+        return self.section.projectsection.header
+
+
+class ProjectSection(models.Model):
+    header = models.TextField("Зміст", max_length=50)
+    main = models.TextField("Головна частина", max_length=300)
+    section = models.OneToOneField(ProjectSectionType, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.header
 
 
 class Action(models.Model):
@@ -186,6 +252,36 @@ class Service(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class ExpertiseRequest(models.Model):
+    rel_projects = models.ForeignKey(Project, on_delete=models.DO_NOTHING, null=True, blank=True)
+    rel_manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True,
+                                    verbose_name="Пов'язаний менеджер")
+    rel_Section = models.OneToOneField(ProjectSectionType, on_delete=models.CASCADE, null=True, blank=True)
+    category = models.CharField("Тематика",
+                                max_length=3,
+                                choices=Category,
+                                default=ALL,
+                                )
+    date = models.DateField("Дата", blank=True, null=True)
+    main = models.TextField("Тема", blank=True, max_length=250)
+    full = models.TextField("Опис", blank=True, null=True)
+
+    def __str__(self):
+        return self.main
+
+
+class ExpertiseAnswer(models.Model):
+    rel_Request = models.OneToOneField(ExpertiseRequest, on_delete=models.CASCADE)
+    rel_manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True,
+                                    verbose_name="Пов'язаний менеджер")
+    date = models.DateField("Дата", blank=True, null=True)
+    main = models.TextField("Тема", blank=True, max_length=250)
+    full = models.TextField("Опис", blank=True, null=True)
+
+    def __str__(self):
+        return self.main
 
 
 @receiver(post_init, sender=Partner)
