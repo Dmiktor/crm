@@ -28,6 +28,7 @@ a:hover {
     color: #29123B;
     background-color: white;
     margin-top: 10px;
+    margin-bottom: 10px;
     border: 2px solid #29123B;
 }
 
@@ -195,7 +196,7 @@ a:active {
     text-align: center;
 }
 
-.prof_pic_tumb {
-    width: 400px;
-    height: 400px;
+.prof_pic {
+    width: 100%;
+    float: left;
 }
