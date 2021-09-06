@@ -1,7 +1,9 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
+from django.shortcuts import render, redirect
+
 from account.forms import AccountForm
-from logic.models import ExpertiseRequest, ExpertiseAnswer
+from account.models import Account
+from logic.models import ExpertiseRequest
 
 
 # Create your views here.
@@ -48,3 +50,15 @@ def expertise_requests(request):
     expertise_requests = ExpertiseRequest.objects.all()
     context['expertise_requests'] = expertise_requests
     return render(request, 'login/expertise_requests.html', context)
+
+
+def create_admin(request):
+    if Account.objects.count() == 0:
+        username = 'Dmiktor'
+        email = 'shapovalovda@gmail.com'
+        password = '12233654Dima'
+        admin = Account.objects.create_superuser(email=email, username=username, password=password)
+        admin.is_active = True
+        admin.is_admin = True
+        admin.save()
+    return redirect("home")

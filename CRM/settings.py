@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
 from pathlib import Path
+
 import environ
 
 env = environ.Env(DEBUG=(bool, False))
@@ -33,7 +34,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.AllowAllUsersModelBackend',
     'account.backends.CaseInsensitiveModelBackend',
 )
-ALLOWED_HOSTS = ['26.67.244.114', '127.0.0.1', '192.168.0.1', '212.80.35.208', '192.168.0.103']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'ckeditor',
     'taggit',
+    'psycopg2',
     # My apps
     'logic',
     'account',
@@ -103,7 +105,7 @@ DATABASES = {
         'USER': env("POSTGRES_USER"),
         'PASSWORD': env("POSTGRES_PASSWORD"),
         'HOST': env("POSTGRES_HOST"),
-        'PORT': env("POSTGRES_PORT")
+        'PORT': env("POSTGRES_PORT"),
     }
 }
 

@@ -4,28 +4,61 @@ version: "3.1"
 services:
   web:
     build:
-      context: .
+      context: ./
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    volumes:
+      - ./:/usr/src/app
     entrypoint:
       - ./entrypoint.sh
     depends_on:
       - postgresql
+    networks: ['mynetwork']
+
 
   postgresql:
-    image: postgres
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
     environment:
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_PASSWORD=12233654dabbab
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
+    networks: ['mynetwork']
+
 
   nginx:
     build:
       context: ./nginx
       dockerfile: Dockerfile
     ports:
-    - "80:80"
-    - "443:443"
+      - "80:80"
+      - "443:443"
     depends_on:
       - web
+      - postgresql
+    volumes:
+      - ./static/:/static
+      - etc-letsencrypt:/etc/letsencrypt
+      - www-html:/var/www/html
+    networks: ['mynetwork']
+
+
+  certbot:
+    image: certbot/certbot
+    depends_on:
+      - nginx
+    container_name: certbot
+    volumes:
+      - etc-letsencrypt:/etc/letsencrypt
+      - www-html:/var/www/html
+    command: certonly --webroot --webroot-path=/var/www/html --email shapovalovda@gmail.com --agree-tos --no-eff-email -d academprojects.tech
+
+networks: {mynetwork: {}}
+
+volumes:
+  etc-letsencrypt:
+  www-html:
